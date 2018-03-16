@@ -5,14 +5,10 @@
 	          1, 2, 4, 8, 16, 32, 64, 128, 256, 512,
                   1, 2, 4, 8, 16, 32, 64, 128, 256, 512,
                   1, 2, 4, 8, 16, 32, 64, 128, 256, 512,
-                  1, 2, 4, 8, 16, 32, 64, 128, 256, 512,],
+                  1, 2, 4, 8, 16, 32, 64, 128, 256, 512],
     "residual_channels": 32,
     "dilation_channels": 32,
-<<<<<<< HEAD
-    "quantization_channels": 32,
-=======
-    "quantization_channels": 256,
->>>>>>> b42d751f061c3425fa8e97d5ecddcadc21721c5f
+    "quantization_channels": 128,
     "skip_channels": 512,
     "use_biases": true,
     "scalar_input": false,
