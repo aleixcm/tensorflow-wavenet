@@ -33,6 +33,14 @@ subplot(2,1,1); plot(x2);
 [y4,fs] = audioread('quantization32.wav');
 subplot(2,1,2); plot(y4);
 
+%% Generated with quantization channels = 64
+% quantization64.wav logdir/train/2018-03-21T17-08-02/model.ckpt-99
+figure;
+[x2,fs] = audioread('longerSinus/sinus16000.wav');
+subplot(2,1,1); plot(x2); 
+[y5,fs] = audioread('quantization64.wav');
+subplot(2,1,2); plot(y5);
+
 %% Generated with quantization channels = 128
 figure;
 [x2,fs] = audioread('longerSinus/sinus16000.wav');
@@ -54,7 +62,7 @@ subplot(2,1,2); plot(y4);
 figure;
 [x2,fs] = audioread('longerSinus/sinus16000.wav');
 subplot(2,1,1); plot(x2); 
-[y5,fs] = audioread('dilations8.wav');
+[y5,fs] = audioread('dilations1x1248.wav');
 subplot(2,1,2); plot(y5);
 
 %% Generated with dilations = 1,2,4,8, 16, 32, 64, 128, 256, 512
