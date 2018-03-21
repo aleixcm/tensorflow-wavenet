@@ -39,6 +39,7 @@ figure;
 subplot(2,1,1); plot(x2); 
 [y5,fs] = audioread('quantization128.wav');
 subplot(2,1,2); plot(y5);
+%GOOD
 
 %% Generated with dilations = 1
 % python train.py --data_dir=longerSinus --num_steps=100 --silence_threshold=0.000000
