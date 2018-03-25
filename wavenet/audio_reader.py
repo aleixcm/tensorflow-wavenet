@@ -8,10 +8,11 @@ import librosa
 import numpy as np
 import tensorflow as tf
 
-FILE_PATTERN = r'p([0-9]+)_([0-9]+)\.wav'
+'''FILE_PATTERN = r'p([0-9]+)_([0-9]+)\.wav' '''
+FILE_PATTERN = r'sinus([0-9])\.wav' #aleix 22/03/2018
 
 
-def get_category_cardinality(files):
+'''def get_category_cardinality(files):
     id_reg_expression = re.compile(FILE_PATTERN)
     min_id = None
     max_id = None
@@ -24,7 +25,23 @@ def get_category_cardinality(files):
             max_id = id
 
     return min_id, max_id
+'''
 
+''' aleix 22/03/2018'''
+def get_category_cardinality(files):
+    id_reg_expression = re.compile(FILE_PATTERN)
+    min_id = None
+    max_id = None
+    for filename in files:
+        matches = id_reg_expression.findall(filename)[0]
+        id = int(matches)
+        if min_id is None or id < min_id:
+            min_id = id
+        if max_id is None or id > max_id:
+            max_id = id
+
+    return min_id, max_id
+''' aleix 22/03/2018'''
 
 def randomize_files(files):
     for file in files:

@@ -19,6 +19,8 @@ from tensorflow.python.client import timeline
 
 from wavenet import WaveNetModel, AudioReader, optimizer_factory
 
+import matplotlib.pyplot as plt
+
 BATCH_SIZE = 1
 DATA_DIRECTORY = './VCTK-Corpus'
 LOGDIR_ROOT = './logdir'
@@ -291,6 +293,7 @@ def main():
 
     step = None
     last_saved_step = saved_global_step
+    a=[] #store loss function (aleix)
     try:
         for step in range(saved_global_step + 1, args.num_steps):
             start_time = time.time()
@@ -317,12 +320,17 @@ def main():
             duration = time.time() - start_time
             print('step {:d} - loss = {:.3f}, ({:.3f} sec/step)'
                   .format(step, loss_value, duration))
-
+            a.append(loss_value)
             if step % args.checkpoint_every == 0:
                 save(saver, sess, logdir, step)
                 last_saved_step = step
-
+        plt.figure(1) #store loss function (aleix)
+        plt.plot(a)
+        plt.show()
     except KeyboardInterrupt:
+        plt.figure(1) #store loss function (aleix)
+        plt.plot(a)
+        plt.show()
         # Introduce a line break after ^C is displayed so save message
         # is on its own line.
         print()
