@@ -165,6 +165,24 @@ plot(x_pos1(length(x_pos1)),y_pos1(length(y_pos1)),'r*')
 freq = abs(1/(2*((x_pos1(length(x_pos1))-x_pos2(length(x_pos2)))))*16000);
 disp(freq);
 
+%% Shapes
+figure;
+[y12,fs] = audioread('generatedSignals/shape440.wav');
+plot(y12)
+
+figure;
+[y13,fs] = audioread('generatedSignals/shape880.wav');
+plot(y12)
+
+%figure
+%Nx = length(y12);
+%nsc = floor(Nx/4.5);
+%nov = floor(nsc/2);
+%nff = max(256,2^nextpow2(nsc));
+%spectrogram(y12,hamming(nsc),nov,nff);
+%maxerr = max(abs(abs(t(:))-abs(s(:))))
+%spectrogram(y12,256,250,256,1e3,'yaxis')
+
 
 
 
