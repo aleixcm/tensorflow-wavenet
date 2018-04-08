@@ -91,26 +91,10 @@ def get_arguments():
         default=None,
         help='Number of categories upon which we globally condition.')
     parser.add_argument(
-        '--lc_channels',
-        type=int,
-        default=None,
-        help='Number of local condition embedding channels. Omit if no '
-             'local conditioning.')
-    parser.add_argument(
-        '--lc_cardinality',
-        type=int,
-        default=None,
-        help='Number of categories upon which we local condition.')
-    parser.add_argument(
         '--gc_id',
         type=int,
         default=None,
         help='ID of category to generate, if globally conditioned.')
-    parser.add_argument(
-        '--lc_id',
-        type=int,
-        default=None,
-        help='ID of category to generate, if locally conditioned.')
     arguments = parser.parse_args()
     if arguments.gc_channels is not None:
         if arguments.gc_cardinality is None:
@@ -121,17 +105,6 @@ def get_arguments():
         if arguments.gc_id is None:
             raise ValueError("Globally conditioning, but global condition was "
                               "not specified. Use --gc_id to specify global "
-                              "condition.")
-
-    if arguments.lc_channels is not None:
-        if arguments.lc_cardinality is None:
-            raise ValueError("Globally conditioning but lc_cardinality not "
-                             "specified. Use --lc_cardinality=377 for full "
-                             "VCTK corpus.")
-
-        if arguments.lc_id is None:
-            raise ValueError("Locally conditioning, but local condition was "
-                              "not specified. Use --lc_id to specify global "
                               "condition.")
 
     return arguments
@@ -180,17 +153,14 @@ def main():
         scalar_input=wavenet_params['scalar_input'],
         initial_filter_width=wavenet_params['initial_filter_width'],
         global_condition_channels=args.gc_channels,
-        global_condition_cardinality=args.gc_cardinality,
-        local_condition_channels = args.lc_channels,
-        local_condition_cardinality = args.lc_cardinality)
-
+        global_condition_cardinality=args.gc_cardinality)
 
     samples = tf.placeholder(tf.int32)
 
     if args.fast_generation:
-        next_sample = net.predict_proba_incremental(samples, args.gc_id, args.lc_id)
+        next_sample = net.predict_proba_incremental(samples, args.gc_id)
     else:
-        next_sample = net.predict_proba(samples, args.gc_id, args.lc_id)
+        next_sample = net.predict_proba(samples, args.gc_id)
 
     if args.fast_generation:
         sess.run(tf.global_variables_initializer())

@@ -9,8 +9,7 @@ import numpy as np
 import tensorflow as tf
 
 '''FILE_PATTERN = r'p([0-9]+)_([0-9]+)\.wav' '''
-'''FILE_PATTERN = r'sinus([0-9])\.wav''''' #aleix 22/03/2018
-FILE_PATTERN = r'[0-9]+cat([0-9]+)\.wav'
+FILE_PATTERN = r'sinus([0-9])\.wav' #aleix 22/03/2018
 
 
 '''def get_category_cardinality(files):
@@ -111,7 +110,6 @@ class AudioReader(object):
                  coord,
                  sample_rate,
                  gc_enabled,
-                 lc_enabled,
                  receptive_field,
                  sample_size=None,
                  silence_threshold=None,
@@ -123,7 +121,6 @@ class AudioReader(object):
         self.receptive_field = receptive_field
         self.silence_threshold = silence_threshold
         self.gc_enabled = gc_enabled
-        self.lc_enabled = lc_enabled
         self.threads = []
         self.sample_placeholder = tf.placeholder(dtype=tf.float32, shape=None)
         self.queue = tf.PaddingFIFOQueue(queue_size,
@@ -137,12 +134,6 @@ class AudioReader(object):
                                                 shapes=[()])
             self.gc_enqueue = self.gc_queue.enqueue([self.id_placeholder])
 
-        if self.lc_enabled:
-            self.id_placeholder_lc = tf.placeholder(dtype=tf.int32, shape=())
-            self.lc_queue = tf.PaddingFIFOQueue(queue_size, ['int32'],
-                                                shapes=[()])
-            self.lc_enqueue = self.lc_queue.enqueue([self.id_placeholder_lc])
-
         # TODO Find a better way to check this.
         # Checking inside the AudioReader's thread makes it hard to terminate
         # the execution of the script, so we do it in the constructor for now.
@@ -151,9 +142,6 @@ class AudioReader(object):
             raise ValueError("No audio files found in '{}'.".format(audio_dir))
         if self.gc_enabled and not_all_have_id(files):
             raise ValueError("Global conditioning is enabled, but file names "
-                             "do not conform to pattern having id.")
-        if self.lc_enabled and not_all_have_id(files):
-            raise ValueError("Local conditioning is enabled, but file names "
                              "do not conform to pattern having id.")
         # Determine the number of mutually-exclusive categories we will
         # accomodate in our embedding table.
@@ -172,30 +160,12 @@ class AudioReader(object):
         else:
             self.gc_category_cardinality = None
 
-        if self.lc_enabled:
-            _, self.lc_category_cardinality = get_category_cardinality(files)
-            # Add one to the largest index to get the number of categories,
-            # since tf.nn.embedding_lookup expects zero-indexing. This
-            # means one or more at the bottom correspond to unused entries
-            # in the embedding lookup table. But that's a small waste of memory
-            # to keep the code simpler, and preserves correspondance between
-            # the id one specifies when generating, and the ids in the
-            # file names.
-            self.lc_category_cardinality += 1
-            print("Detected --lc_cardinality={}".format(
-                  self.lc_category_cardinality))
-        else:
-            self.lc_category_cardinality = None
-
     def dequeue(self, num_elements):
         output = self.queue.dequeue_many(num_elements)
         return output
 
     def dequeue_gc(self, num_elements):
         return self.gc_queue.dequeue_many(num_elements)
-
-    def dequeue_lc(self, num_elements):
-        return self.lc_queue.dequeue_many(num_elements)
 
     def thread_main(self, sess):
         stop = False
@@ -231,18 +201,12 @@ class AudioReader(object):
                         if self.gc_enabled:
                             sess.run(self.gc_enqueue, feed_dict={
                                 self.id_placeholder: category_id})
-                        if self.lc_enabled:
-                            sess.run(self.lc_enqueue, feed_dict={
-                                self.id_placeholder_lc: category_id})
                 else:
                     sess.run(self.enqueue,
                              feed_dict={self.sample_placeholder: audio})
                     if self.gc_enabled:
                         sess.run(self.gc_enqueue,
                                  feed_dict={self.id_placeholder: category_id})
-                    if self.lc_enabled:
-                        sess.run(self.lc_enqueue,
-                                 feed_dict={self.id_placeholder_lc: category_id})
 
     def start_threads(self, sess, n_threads=1):
         for _ in range(n_threads):
