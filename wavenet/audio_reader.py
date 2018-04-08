@@ -8,7 +8,8 @@ import librosa
 import numpy as np
 import tensorflow as tf
 
-'''FILE_PATTERN = r'p([0-9]+)_([0-9]+)\.wav' '''
+# FILE_PATTERN = r'p([0-9]+)_([0-9]+)\.wav' '''
+# FILE_PATTERN = r'[0-9]+cat([0-9]+)\.wav'
 FILE_PATTERN = r'sinus([0-9])\.wav' #aleix 22/03/2018
 
 
