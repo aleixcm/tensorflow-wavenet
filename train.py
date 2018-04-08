@@ -326,11 +326,13 @@ def main():
                 last_saved_step = step
         plt.figure(1) #store loss function (aleix)
         plt.plot(a)
-        plt.show()
+        #plt.show()
+        plt.savefig(os.path.join(logdir, 'loss.png'))
     except KeyboardInterrupt:
         plt.figure(1) #store loss function (aleix)
         plt.plot(a)
-        plt.show()
+        #plt.show()
+        plt.savefig(os.path.join(logdir, 'loss.png'))
         # Introduce a line break after ^C is displayed so save message
         # is on its own line.
         print()
