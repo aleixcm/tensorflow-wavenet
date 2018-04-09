@@ -10,7 +10,7 @@ import scipy.io.wavfile as wavfile
 #plt.show()
 
 #signal2 = wavfile.read('corpus/twoSin/sinus2.wav')
-signal2 = wavfile.read('conSin2.wav')
+signal2 = wavfile.read('generatedSignals/2provaScale6.wav')
 signal2 = signal2[1]
 #plt.figure(2)
 #plt.title('Input Signal - 440 Hz')
@@ -27,5 +27,6 @@ plt.figure(1)
 NFFT = 1024
 Fs = 16000
 plt.specgram(signal2, NFFT=NFFT, Fs=Fs, noverlap=900)
+#plt.axis([0, 1, 100, 2000])
 #plt.plot(signal2)
 plt.show()

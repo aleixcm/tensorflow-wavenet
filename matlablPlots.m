@@ -183,6 +183,13 @@ plot(y12)
 %maxerr = max(abs(abs(t(:))-abs(s(:))))
 %spectrogram(y12,256,250,256,1e3,'yaxis')
 
+%% Spectograms for generated global proba
+[x,fs] = audioread('provaScale5.wav');
+soundsc(x,fs)
+%plot(x)
+%figure()
+%spectrogram(x,128,120,128,16000,'yaxis')
+
 
 
 
