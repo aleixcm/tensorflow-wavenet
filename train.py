@@ -252,7 +252,8 @@ def main():
 
     if args.l2_regularization_strength == 0:
         args.l2_regularization_strength = None
-    loss = net.loss(input_batch=audio_batch,
+    #aleix
+    loss, target_output0, target_output1 = net.loss(input_batch=audio_batch,
                     global_condition_batch=gc_id_batch,
                     l2_regularization_strength=args.l2_regularization_strength)
     optimizer = optimizer_factory[args.optimizer](
@@ -314,7 +315,12 @@ def main():
                 with open(timeline_path, 'w') as f:
                     f.write(tl.generate_chrome_trace_format(show_memory=True))
             else:
-                summary, loss_value, _ = sess.run([summaries, loss, optim])
+                #aleix
+                summary, loss_value,target_output00, target_output10, _ = sess.run([summaries, loss, target_output0, target_output1, optim])
+                print(target_output00)
+                print(target_output00.shape)
+                print(target_output10)
+                print(target_output10.shape)
                 writer.add_summary(summary, step)
 
             duration = time.time() - start_time
