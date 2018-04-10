@@ -1,5 +1,4 @@
 """Training script for the WaveNet network on the VCTK corpus.
-
 This script trains a network with the WaveNet using data from the VCTK corpus,
 which can be freely downloaded at the following site (~10 GB):
 http://homepages.inf.ed.ac.uk/jyamagis/page3/page58/page58.html
@@ -253,7 +252,7 @@ def main():
     if args.l2_regularization_strength == 0:
         args.l2_regularization_strength = None
     #aleix
-    loss, target_output0, target_output1 = net.loss(input_batch=audio_batch,
+    loss, target_output0, target_output1, gc_embedding1 = net.loss(input_batch=audio_batch,
                     global_condition_batch=gc_id_batch,
                     l2_regularization_strength=args.l2_regularization_strength)
     optimizer = optimizer_factory[args.optimizer](
@@ -316,11 +315,17 @@ def main():
                     f.write(tl.generate_chrome_trace_format(show_memory=True))
             else:
                 #aleix
-                summary, loss_value,target_output00, target_output10, _ = sess.run([summaries, loss, target_output0, target_output1, optim])
-                print(target_output00)
-                print(target_output00.shape)
-                print(target_output10)
-                print(target_output10.shape)
+                summary, loss_value,target_output00, target_output10, gc_embedding10, gc_id_batch1, _ = \
+                    sess.run([summaries, loss, target_output0, target_output1, gc_embedding1, gc_id_batch,
+                              optim])
+                #print(target_output00)
+                #print(target_output00.shape)
+                #print(target_output10)
+                #print(target_output10.shape)
+                print(gc_embedding10)
+                print(gc_embedding10.shape)
+                print(gc_id_batch1)
+                print(gc_id_batch1.shape)
                 writer.add_summary(summary, step)
 
             duration = time.time() - start_time

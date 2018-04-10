@@ -30,7 +30,6 @@ def create_bias_variable(name, shape):
 
 class WaveNetModel(object):
     '''Implements the WaveNet network for generative audio.
-
     Usage (with the architecture as in the DeepMind paper):
         dilations = [2**i for i in range(N)] * M
         filter_width = 2  # Convolutions just use 2 samples.
@@ -58,7 +57,6 @@ class WaveNetModel(object):
                  global_condition_channels=None,
                  global_condition_cardinality=None):
         '''Initializes the WaveNet model.
-
         Args:
             batch_size: How many audio files are supplied per batch
                 (recommended: 1).
@@ -93,7 +91,6 @@ class WaveNetModel(object):
                 categories, where N = global_condition_cardinality. If None,
                 then the global_condition tensor is regarded as a vector which
                 must have dimension global_condition_channels.
-
         '''
         self.batch_size = batch_size
         self.dilations = dilations
@@ -235,7 +232,6 @@ class WaveNetModel(object):
 
     def _create_causal_layer(self, input_batch):
         '''Creates a single causal convolution layer.
-
         The layer can change the number of channels.
         '''
         with tf.name_scope('causal_layer'):
@@ -245,7 +241,6 @@ class WaveNetModel(object):
     def _create_dilation_layer(self, input_batch, layer_index, dilation,
                                global_condition_batch, output_width):
         '''Creates a single causal dilated convolution layer.
-
         Args:
              input_batch: Input to the dilation layer.
              layer_index: Integer indicating which layer this is.
@@ -255,20 +250,16 @@ class WaveNetModel(object):
                  [batch size, 1, channels]. The 1 is for the axis
                  corresponding to time so that the result is broadcast to
                  all time steps.
-
         The layer contains a gated filter that connects to dense output
         and to a skip connection:
-
                |-> [gate]   -|        |-> 1x1 conv -> skip output
                |             |-> (*) -|
         input -|-> [filter] -|        |-> 1x1 conv -|
                |                                    |-> (+) -> dense output
                |------------------------------------|
-
         Where `[gate]` and `[filter]` are causal convolutions with a
         non-linear activation at the output. Biases and global conditioning
         are omitted due to the limits of ASCII art.
-
         '''
         variables = self.variables['dilated_stack'][layer_index]
 
@@ -520,7 +511,6 @@ class WaveNetModel(object):
 
     def _one_hot(self, input_batch):
         '''One-hot encodes the waveform amplitudes.
-
         This allows the definition of the network as a categorical distribution
         over a finite set of possible amplitudes.
         '''
@@ -625,7 +615,6 @@ class WaveNetModel(object):
              l2_regularization_strength=None,
              name='wavenet'):
         '''Creates a WaveNet network and returns the autoencoding loss.
-
         The variables are all scoped to the given name.
         '''
         with tf.name_scope(name):
@@ -634,6 +623,7 @@ class WaveNetModel(object):
                                           self.quantization_channels)
 
             gc_embedding = self._embed_gc(global_condition_batch)
+            gc_embedding1 = gc_embedding
             encoded = self._one_hot(encoded_input)
             if self.scalar_input:
                 network_input = tf.reshape(
@@ -661,9 +651,11 @@ class WaveNetModel(object):
                     [-1, -1, -1])
                 target_output = tf.reshape(target_output,
                                            [-1, self.quantization_channels])
+                #target_output1 = target_output
                 prediction = tf.reshape(raw_output,
                                         [-1, self.quantization_channels])
-                target_output1 = prediction #aleix
+                target_output1 = prediction
+                #target_output1 = raw_output #aleix
                 loss = tf.nn.softmax_cross_entropy_with_logits(
                     logits=prediction,
                     labels=target_output)
@@ -672,7 +664,7 @@ class WaveNetModel(object):
                 tf.summary.scalar('loss', reduced_loss)
 
                 if l2_regularization_strength is None:
-                    return reduced_loss, target_output0, target_output1 #aleix
+                    return reduced_loss, target_output0, target_output1, gc_embedding1 #aleix
                 else:
                     # L2 regularization for all trainable parameters
                     l2_loss = tf.add_n([tf.nn.l2_loss(v)
@@ -686,4 +678,4 @@ class WaveNetModel(object):
                     tf.summary.scalar('l2_loss', l2_loss)
                     tf.summary.scalar('total_loss', total_loss)
 
-                    return total_loss, target_output0, target_output1 #aleix
+                    return total_loss, target_output0, target_output1, gc_embedding1 #aleix
