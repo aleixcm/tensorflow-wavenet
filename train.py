@@ -322,10 +322,10 @@ def main():
                 #print(target_output00.shape)
                 #print(target_output10)
                 #print(target_output10.shape)
-                print(gc_embedding10)
-                print(gc_embedding10.shape)
-                print(gc_id_batch1)
-                print(gc_id_batch1.shape)
+                #print(gc_embedding10)
+                #print(gc_embedding10.shape)
+                #print(gc_id_batch1)
+                #print(gc_id_batch1.shape)
                 writer.add_summary(summary, step)
 
             duration = time.time() - start_time

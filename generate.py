@@ -156,9 +156,17 @@ def main():
         global_condition_cardinality=args.gc_cardinality)
 
     samples = tf.placeholder(tf.int32)
-
+    sample_labels = tf.placeholder(tf.int32)
+    count = 0
     if args.fast_generation:
-        next_sample = net.predict_proba_incremental(samples, args.gc_id)
+        #if count >= 8000:
+        #    args.gc_id = 1
+        # count += 1
+        # print('step: ', step)
+        # print('gc_id:', args.gc_id)
+        # print('count:', count)
+        #next_sample = net.predict_proba_incremental(samples, args.gc_id)
+        next_sample = net.predict_proba_incremental(samples, sample_labels)
     else:
         next_sample = net.predict_proba(samples, args.gc_id)
 
@@ -206,11 +214,20 @@ def main():
         print('Done.')
 
     last_sample_timestamp = datetime.now()
+    sample_labels_list = [0]*8000+[1]*8000
     for step in range(args.samples):
         if args.fast_generation:
+            #args.gc_id = 1
+            #if count >= 8000:
+            #    args.gc_id = 1
+            #count += 1
+            #print('step: ', step)
+            #print('gc_id:', args.gc_id)
+            ##print('count:', count)
             outputs = [next_sample]
             outputs.extend(net.push_ops)
             window = waveform[-1]
+            label_window = sample_labels_list[step]
         else:
             if len(waveform) > net.receptive_field:
                 window = waveform[-net.receptive_field:]
@@ -219,7 +236,8 @@ def main():
             outputs = [next_sample]
 
         # Run the WaveNet to predict the next sample.
-        prediction = sess.run(outputs, feed_dict={samples: window})[0]
+        #prediction = sess.run(outputs, feed_dict={samples: window})[0]
+        prediction = sess.run(outputs, feed_dict={samples: window, sample_labels: label_window})[0]
 
         # Scale prediction distribution using temperature.
         np.seterr(divide='ignore')
@@ -263,8 +281,10 @@ def main():
     writer = tf.summary.FileWriter(logdir)
     tf.summary.audio('generated', decode, wavenet_params['sample_rate'])
     summaries = tf.summary.merge_all()
+    #gc_id0 = args.gc_id
     summary_out = sess.run(summaries,
                            feed_dict={samples: np.reshape(waveform, [-1, 1])})
+    #print('gc_id: ', args.gc_id)
     writer.add_summary(summary_out)
 
     # Save the result as a wav file.
