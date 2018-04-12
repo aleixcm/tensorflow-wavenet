@@ -294,7 +294,7 @@ def main():
 
     step = None
     last_saved_step = saved_global_step
-    a=[] #store loss function (aleix)
+    loss_plot=[] #store loss function (aleix)
     try:
         for step in range(saved_global_step + 1, args.num_steps):
             start_time = time.time()
@@ -317,28 +317,41 @@ def main():
             else:
                 #aleix
                 summary, loss_value,target_output00, target_output10, _ = sess.run([summaries, loss, target_output0, target_output1, optim])
-                print(target_output00)
-                print(target_output00.shape)
-                print(target_output10)
-                print(target_output10.shape)
+                #print(target_output00)
+                #print(target_output00.shape)
+                #print(target_output10)
+                #print(target_output10.shape)
                 writer.add_summary(summary, step)
 
             duration = time.time() - start_time
             print('step {:d} - loss = {:.3f}, ({:.3f} sec/step)'
                   .format(step, loss_value, duration))
-            a.append(loss_value)
+            loss_plot.append(loss_value)
             if step % args.checkpoint_every == 0:
                 save(saver, sess, logdir, step)
                 last_saved_step = step
         plt.figure(1) #store loss function (aleix)
-        plt.plot(a)
+        plt.plot(loss_plot)
         #plt.show()
-        plt.savefig(os.path.join(logdir, 'loss.png'))
+        plt.savefig(os.path.join(args.data_dir, 'loss.png'))
+        print('Loss plot saved')
+        file00 = open(os.path.join(args.data_dir, 'loss.txt'), 'w')
+        for item in loss_plot:
+            file00.write("%s\n" % item)
+        file00.close()
+        print('Loss .txt saved')
     except KeyboardInterrupt:
         plt.figure(1) #store loss function (aleix)
-        plt.plot(a)
+        plt.plot(loss_plot)
+        plt.savefig(os.path.join(args.data_dir, 'loss.png'))
+        print('Loss plot saved')
+        file00 = open(os.path.join(args.data_dir,'loss.txt'), 'w')
+        for item in loss_plot:
+            file00.write("%s\n" % item)
+        file00.close()
+        print('Loss .txt saved')
         #plt.show()
-        plt.savefig(os.path.join(logdir, 'loss.png'))
+
         # Introduce a line break after ^C is displayed so save message
         # is on its own line.
         print()
