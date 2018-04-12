@@ -183,6 +183,13 @@ plot(y12)
 %maxerr = max(abs(abs(t(:))-abs(s(:))))
 %spectrogram(y12,256,250,256,1e3,'yaxis')
 
+%% Local Conditioning on Generate
+[y13,fs] = audioread('amajor.wav');
+%plot(y13)
+%soundsc(y13)
+length(y13)
+
+
 
 
 

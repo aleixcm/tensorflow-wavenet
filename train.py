@@ -251,10 +251,15 @@ def main():
 
     if args.l2_regularization_strength == 0:
         args.l2_regularization_strength = None
+    #loss = net.loss(input_batch=audio_batch,
+    #                global_condition_batch=gc_id_batch,
+    #                l2_regularization_strength=args.l2_regularization_strength)
+
     #aleix
-    loss, target_output0, target_output1, gc_embedding1 = net.loss(input_batch=audio_batch,
+    loss, target_output0, target_output1, gc_embedding1, conv_filter, conv_gate, global_conditioning_batch = net.loss(input_batch=audio_batch,
                     global_condition_batch=gc_id_batch,
                     l2_regularization_strength=args.l2_regularization_strength)
+    #aleix
     optimizer = optimizer_factory[args.optimizer](
                     learning_rate=args.learning_rate,
                     momentum=args.momentum)
@@ -314,18 +319,26 @@ def main():
                 with open(timeline_path, 'w') as f:
                     f.write(tl.generate_chrome_trace_format(show_memory=True))
             else:
+                #summary, loss_value, _ = sess.run([summaries, loss, optim])
                 #aleix
-                summary, loss_value,target_output00, target_output10, gc_embedding10, gc_id_batch1, _ = \
-                    sess.run([summaries, loss, target_output0, target_output1, gc_embedding1, gc_id_batch,
-                              optim])
+                summary, loss_value,target_output00, target_output10, gc_embedding10, gc_id_batch1,\
+                conv_filter0, conv_gate0,global_conditioning_batch0,  _ = \
+                    sess.run([summaries, loss, target_output0, target_output1, gc_embedding1, gc_id_batch, conv_filter, conv_gate,
+                              global_conditioning_batch, optim])
                 #print(target_output00)
                 #print(target_output00.shape)
                 #print(target_output10)
                 #print(target_output10.shape)
                 #print(gc_embedding10)
                 #print(gc_embedding10.shape)
-                #print(gc_id_batch1)
+                print(gc_id_batch1)
                 #print(gc_id_batch1.shape)
+                #print(conv_filter0)
+                #print(conv_filter0.shape)
+                #print(conv_gate0)
+                #print(conv_gate0.shape)
+                print(global_conditioning_batch0)
+                #print(global_conditioning_batch0.shape)
                 writer.add_summary(summary, step)
 
             duration = time.time() - start_time
