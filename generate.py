@@ -90,11 +90,23 @@ def get_arguments():
         type=int,
         default=None,
         help='Number of categories upon which we globally condition.')
+    #parser.add_argument(
+    #    '--gc_id',
+    #    type=int,
+    #    default=None,
+    #    help='ID of category to generate, if globally conditioned.')
+    #aleix
     parser.add_argument(
-        '--gc_id',
-        type=int,
+            '--gc_id',
+            type=int,
+            default=0,
+            help='ID of category to generate, if globally conditioned.')
+    parser.add_argument(
+        '--labels',
+        type=str,
         default=None,
-        help='ID of category to generate, if globally conditioned.')
+        help='Name of the file that contains labels for each samples.')
+    #aleix
     arguments = parser.parse_args()
     if arguments.gc_channels is not None:
         if arguments.gc_cardinality is None:
@@ -131,6 +143,13 @@ def create_seed(filename,
 
     return quantized[:cut_index]
 
+#aleix
+def read_sample_label(labelsFileName):
+    with open(labelsFileName, 'r') as myfile:
+        labels_sample = myfile.read().replace('\n', '')
+
+    return(labels_sample)
+#aleix
 
 def main():
     args = get_arguments()
@@ -214,7 +233,10 @@ def main():
         print('Done.')
 
     last_sample_timestamp = datetime.now()
-    sample_labels_list = [0]*8000+[1]*8000
+    #aleix
+    #sample_labels_list = [0]*8000+[1]*8000
+    labelsFileName = (args.labels)
+    sample_labels_list = read_sample_label(labelsFileName)
     for step in range(args.samples):
         if args.fast_generation:
             #args.gc_id = 1
