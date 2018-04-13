@@ -9,11 +9,13 @@ import numpy as np
 import tensorflow as tf
 
 # FILE_PATTERN = r'p([0-9]+)_([0-9]+)\.wav' '''
-FILE_PATTERN = r'[0-9]+cat([0-9]+)\.wav'
-#FILE_PATTERN = r'sinus([0-9])\.wav' #aleix 22/03/2018
+#aleix
+FILE_PATTERN = r'c([0-9]+)file([0-9]+)\.wav'
+#FILE_PATTERN = r'sinus([0-9])\.wav'
+#aleix
 
 
-'''def get_category_cardinality(files):
+def get_category_cardinality(files):
     id_reg_expression = re.compile(FILE_PATTERN)
     min_id = None
     max_id = None
@@ -26,9 +28,10 @@ FILE_PATTERN = r'[0-9]+cat([0-9]+)\.wav'
             max_id = id
 
     return min_id, max_id
-'''
+
 
 ''' aleix 22/03/2018'''
+''' works for format twoSin, scale
 def get_category_cardinality(files):
     id_reg_expression = re.compile(FILE_PATTERN)
     min_id = None
@@ -42,6 +45,7 @@ def get_category_cardinality(files):
             max_id = id
 
     return min_id, max_id
+'''
 ''' aleix 22/03/2018'''
 
 def randomize_files(files):

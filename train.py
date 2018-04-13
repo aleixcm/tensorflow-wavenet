@@ -334,22 +334,26 @@ def main():
         plt.plot(loss_plot)
         #plt.show()
         plt.savefig(os.path.join(args.data_dir, 'loss.png'))
-        print('Loss plot saved')
+        print()
+        print('Loss .plot saved')
         file00 = open(os.path.join(args.data_dir, 'loss.txt'), 'w')
         for item in loss_plot:
             file00.write("%s\n" % item)
         file00.close()
         print('Loss .txt saved')
+        print()
     except KeyboardInterrupt:
         plt.figure(1) #store loss function (aleix)
         plt.plot(loss_plot)
         plt.savefig(os.path.join(args.data_dir, 'loss.png'))
+        print()
         print('Loss plot saved')
         file00 = open(os.path.join(args.data_dir,'loss.txt'), 'w')
         for item in loss_plot:
             file00.write("%s\n" % item)
         file00.close()
         print('Loss .txt saved')
+        print()
         #plt.show()
 
         # Introduce a line break after ^C is displayed so save message
