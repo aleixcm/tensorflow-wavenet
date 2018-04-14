@@ -20,7 +20,9 @@ from tensorflow.python.client import timeline
 from wavenet import WaveNetModel, AudioReader, optimizer_factory
 
 import matplotlib.pyplot as plt
+
 plt.switch_backend('agg')
+os.environ["CUDA_VISIBLE_DEVICES"]="3"
 
 BATCH_SIZE = 1
 DATA_DIRECTORY = './VCTK-Corpus'
