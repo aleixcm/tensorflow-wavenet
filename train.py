@@ -54,6 +54,9 @@ def get_arguments():
                         help='How many wav files to process at once. Default: ' + str(BATCH_SIZE) + '.')
     parser.add_argument('--data_dir', type=str, default=DATA_DIRECTORY,
                         help='The directory containing the VCTK corpus.')
+    #aleix
+    parser.add_argument('--data_dir_target', type=str, default=DATA_DIRECTORY,
+                        help='The directory containing the target output.')
     parser.add_argument('--store_metadata', type=bool, default=METADATA,
                         help='Whether to store advanced debugging information '
                         '(execution time, memory consumption) for use with '
@@ -232,6 +235,19 @@ def main():
             sample_size=args.sample_size,
             silence_threshold=silence_threshold)
         audio_batch = reader.dequeue(args.batch_size)
+        #aleix
+        reader_target = AudioReader(
+            args.data_dir_target,
+            coord,
+            sample_rate=wavenet_params['sample_rate'],
+            gc_enabled=gc_enabled,
+            receptive_field=WaveNetModel.calculate_receptive_field(wavenet_params["filter_width"],
+                                                                   wavenet_params["dilations"],
+                                                                   wavenet_params["scalar_input"],
+                                                                   wavenet_params["initial_filter_width"]),
+            sample_size=args.sample_size,
+            silence_threshold=silence_threshold)
+        audio_batch_target = reader_target.dequeue(args.batch_size)
         if gc_enabled:
             gc_id_batch = reader.dequeue_gc(args.batch_size)
         else:
@@ -257,6 +273,7 @@ def main():
         args.l2_regularization_strength = None
     #aleix
     loss, target_output0, target_output1 = net.loss(input_batch=audio_batch,
+                    input_batch_target=audio_batch_target,
                     global_condition_batch=gc_id_batch,
                     l2_regularization_strength=args.l2_regularization_strength)
     optimizer = optimizer_factory[args.optimizer](
@@ -294,6 +311,7 @@ def main():
 
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
     reader.start_threads(sess)
+    reader_target.start_threads(sess)
 
     step = None
     last_saved_step = saved_global_step

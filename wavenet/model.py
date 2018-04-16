@@ -621,6 +621,7 @@ class WaveNetModel(object):
 
     def loss(self,
              input_batch,
+             input_batch_target,
              global_condition_batch=None,
              l2_regularization_strength=None,
              name='wavenet'):
@@ -632,9 +633,16 @@ class WaveNetModel(object):
             # We mu-law encode and quantize the input audioform.
             encoded_input = mu_law_encode(input_batch,
                                           self.quantization_channels)
+            # aleix
+            encoded_target = mu_law_encode(input_batch_target,
+                                           self.quantization_channels)
+            #aleix
 
             gc_embedding = self._embed_gc(global_condition_batch)
             encoded = self._one_hot(encoded_input)
+            #aleix
+            encoded_target = self._one_hot(encoded_target)
+            #aleix
             if self.scalar_input:
                 network_input = tf.reshape(
                     tf.cast(input_batch, tf.float32),
@@ -652,18 +660,31 @@ class WaveNetModel(object):
             with tf.name_scope('loss'):
                 # Cut off the samples corresponding to the receptive field
                 # for the first predicted sample.
-                target_output0 = encoded #aleix
+                # aleix
+
+                target_output0 = encoded
+                #target_output = tf.slice(
+                #    tf.reshape(
+                #        encoded,
+                #         [self.batch_size, -1, self.quantization_channels]),
+                #   [0, self.receptive_field, 0],
+                #    [-1, -1, -1])
+                #target_output = tf.reshape(target_output,
+                #                           [-1, self.quantization_channels])
+                #prediction = tf.reshape(raw_output,
+                #                        [-1, self.quantization_channels])
                 target_output = tf.slice(
                     tf.reshape(
-                        encoded,
+                        encoded_target,
                         [self.batch_size, -1, self.quantization_channels]),
                     [0, self.receptive_field, 0],
                     [-1, -1, -1])
                 target_output = tf.reshape(target_output,
                                            [-1, self.quantization_channels])
+                #aleix
                 prediction = tf.reshape(raw_output,
                                         [-1, self.quantization_channels])
-                target_output1 = prediction #aleix
+                target_output1 = prediction
                 loss = tf.nn.softmax_cross_entropy_with_logits(
                     logits=prediction,
                     labels=target_output)
