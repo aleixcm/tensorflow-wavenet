@@ -642,7 +642,6 @@ class WaveNetModel(object):
             encoded = self._one_hot(encoded_input)
             #aleix
             encoded_target = self._one_hot(encoded_target)
-            #aleix
             if self.scalar_input:
                 network_input = tf.reshape(
                     tf.cast(input_batch, tf.float32),
@@ -672,7 +671,7 @@ class WaveNetModel(object):
                 #target_output = tf.reshape(target_output,
                 #                           [-1, self.quantization_channels])
                 #prediction = tf.reshape(raw_output,
-                #                        [-1, self.quantization_channels])
+                #                       [-1, self.quantization_channels])
                 target_output = tf.slice(
                     tf.reshape(
                         encoded_target,
