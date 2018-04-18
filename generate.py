@@ -106,11 +106,17 @@ def get_arguments():
         type=int,
         default=None,
         help='ID of category to generate, if globally conditioned.')
+    #parser.add_argument(
+    #    '--lc_id',
+    #    type=int,
+    #    default=None,
+    #    help='ID of category to generate, if locally conditioned.')
     parser.add_argument(
-        '--lc_id',
-        type=int,
+        '--labels',
+        type=str,
         default=None,
-        help='ID of category to generate, if locally conditioned.')
+        help='Name of the file that contains labels for each samples.')
+
     arguments = parser.parse_args()
     if arguments.gc_channels is not None:
         if arguments.gc_cardinality is None:
@@ -129,10 +135,10 @@ def get_arguments():
                              "specified. Use --lc_cardinality=377 for full "
                              "VCTK corpus.")
 
-        if arguments.lc_id is None:
-            raise ValueError("Locally conditioning, but local condition was "
-                              "not specified. Use --lc_id to specify global "
-                              "condition.")
+        #if arguments.lc_id is None:
+        #    raise ValueError("Locally conditioning, but local condition was "
+        #                      "not specified. Use --lc_id to specify global "
+        #                      "condition.")
 
     return arguments
 
@@ -157,6 +163,14 @@ def create_seed(filename,
                         lambda: tf.constant(window_size))
 
     return quantized[:cut_index]
+
+#aleix
+def read_sample_label(labelsFileName):
+    with open(labelsFileName, 'r') as myfile:
+        labels_sample = myfile.read().replace('\n', '')
+
+    return(labels_sample)
+#aleix
 
 
 def main():
@@ -186,11 +200,14 @@ def main():
 
 
     samples = tf.placeholder(tf.int32)
+    sample_labels = tf.placeholder(tf.int32) #aleix
 
     if args.fast_generation:
-        next_sample = net.predict_proba_incremental(samples, args.gc_id, args.lc_id)
+        #next_sample = net.predict_proba_incremental(samples, args.gc_id, args.lc_id)
+        next_sample = net.predict_proba_incremental(samples, args.gc_id, sample_labels)
     else:
-        next_sample = net.predict_proba(samples, args.gc_id, args.lc_id)
+        #next_sample = net.predict_proba(samples, args.gc_id, args.lc_id)
+        next_sample = net.predict_proba_incremental(samples, args.gc_id, sample_labels)
 
     if args.fast_generation:
         sess.run(tf.global_variables_initializer())
@@ -236,11 +253,18 @@ def main():
         print('Done.')
 
     last_sample_timestamp = datetime.now()
+
+    # aleix
+    # sample_labels_list = [0]*8000+[1]*8000
+    labelsFileName = (args.labels)
+    sample_labels_list = read_sample_label(labelsFileName)
+
     for step in range(args.samples):
         if args.fast_generation:
             outputs = [next_sample]
             outputs.extend(net.push_ops)
             window = waveform[-1]
+            label_window = sample_labels_list[step]
         else:
             if len(waveform) > net.receptive_field:
                 window = waveform[-net.receptive_field:]
@@ -249,7 +273,9 @@ def main():
             outputs = [next_sample]
 
         # Run the WaveNet to predict the next sample.
-        prediction = sess.run(outputs, feed_dict={samples: window})[0]
+        #prediction = sess.run(outputs, feed_dict={samples: window})[0]
+        prediction = sess.run(outputs, feed_dict={samples: window, sample_labels: label_window})[0]
+
 
         # Scale prediction distribution using temperature.
         np.seterr(divide='ignore')
