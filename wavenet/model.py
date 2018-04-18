@@ -158,13 +158,13 @@ class WaveNetModel(object):
                 # given to us and we don't need to do the embedding lookup.
                 # Still another alternative is no global condition at all, in
                 # which case we also don't do a tf.nn.embedding_lookup.
-                with tf.variable_scope('embeddings'):
+                with tf.variable_scope('embeddings_lc'):
                     layer = dict()
                     layer['lc_embedding'] = create_embedding_table(
                         'lc_embedding',
                         [self.local_condition_cardinality,
                          self.local_condition_channels])
-                    var['embeddings'] = layer
+                    var['embeddings_lc'] = layer
 
             if self.global_condition_cardinality is not None:
                 # We only look up the embedding if we are conditioning on a
@@ -188,13 +188,13 @@ class WaveNetModel(object):
                 # given to us and we don't need to do the embedding lookup.
                 # Still another alternative is no global condition at all, in
                 # which case we also don't do a tf.nn.embedding_lookup.
-                with tf.variable_scope('embeddings'):
+                with tf.variable_scope('embeddings_lc'):
                     layer = dict()
                     layer['lc_embedding'] = create_embedding_table(
                         'lc_embedding',
                         [self.local_condition_cardinality,
                          self.local_condition_channels])
-                    var['embeddings'] = layer
+                    var['embeddings_lc'] = layer
 
             with tf.variable_scope('causal_layer'):
                 layer = dict()
@@ -666,7 +666,7 @@ class WaveNetModel(object):
         if self.local_condition_cardinality is not None:
             # Only lookup the embedding if the global condition is presented
             # as an integer of mutually-exclusive categories ...
-            embedding_table = self.variables['embeddings']['lc_embedding']
+            embedding_table = self.variables['embeddings_lc']['lc_embedding']
             embedding = tf.nn.embedding_lookup(embedding_table,
                                                local_condition)
         elif local_condition is not None:
