@@ -353,17 +353,30 @@ class WaveNetModel(object):
 
         if local_condition_batch is not None:
             weights_lc_filter = variables['lc_filtweights']
-            conv_filter = conv_filter + tf.nn.conv1d(local_condition_batch,
-                                                     weights_lc_filter,
-                                                     stride=1,
-                                                     padding="SAME",
-                                                     name="lc_filter")
+
+            lc_filter_output = tf.nn.conv1d(local_condition_batch,
+                                            weights_lc_filter,
+                                            stride=1,
+                                            padding="SAME",
+                                            name="lc_filter_conv")
+
+            conv_filter = conv_filter + tf.slice(
+                lc_filter_output,
+                [0, tf.shape(lc_filter_output)[1] - tf.shape(conv_filter)[1], 0],
+                [-1, -1, -1]
+            )
+
             weights_lc_gate = variables['lc_gateweights']
-            conv_gate = conv_gate + tf.nn.conv1d(local_condition_batch,
-                                                 weights_lc_gate,
-                                                 stride=1,
-                                                 padding="SAME",
-                                                 name="lc_gate")
+            lc_gate_output = tf.nn.conv1d(local_condition_batch,
+                                          weights_lc_gate,
+                                          stride=1,
+                                          padding="SAME",
+                                          name="lc_gate_conv")
+            conv_gate = conv_gate + tf.slice(
+                lc_gate_output,
+                [0, tf.shape(lc_gate_output)[1] - tf.shape(conv_gate)[1], 0],
+                [-1, -1, -1]
+            )
 
         if self.use_biases:
             filter_bias = variables['filter_bias']
@@ -657,7 +670,7 @@ class WaveNetModel(object):
 
     def _embed_lc(self, local_condition):
         '''Returns embedding for global condition.
-        :param global_condition: Either ID of global condition for
+        :param locaal_condition: Either ID of global condition for
                tf.nn.embedding_lookup or actual embedding. The latter is
                experimental.
         :return: Embedding or None
@@ -759,7 +772,7 @@ class WaveNetModel(object):
                                           self.quantization_channels)
 
             gc_embedding = self._embed_gc(global_condition_batch)
-            lc_embedding = self._embed_lc(local_condition_batch)
+            #lc_embedding = self._embed_lc(local_condition_batch)
             encoded = self._one_hot(encoded_input)
             if self.scalar_input:
                 network_input = tf.reshape(
@@ -773,7 +786,7 @@ class WaveNetModel(object):
             network_input = tf.slice(network_input, [0, 0, 0],
                                      [-1, network_input_width, -1])
 
-            raw_output = self._create_network(network_input, gc_embedding, lc_embedding)
+            raw_output = self._create_network(network_input, gc_embedding, local_condition_batch)
 
             with tf.name_scope('loss'):
                 # Cut off the samples corresponding to the receptive field

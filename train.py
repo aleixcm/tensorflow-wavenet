@@ -225,7 +225,7 @@ def main():
             coord,
             sample_rate=wavenet_params['sample_rate'],
             gc_enabled=gc_enabled,
-            lc_enabled = lc_enabled,
+            lc_channels = args.lc_channels,
             receptive_field=WaveNetModel.calculate_receptive_field(wavenet_params["filter_width"],
                                                                    wavenet_params["dilations"],
                                                                    wavenet_params["scalar_input"],
@@ -264,7 +264,7 @@ def main():
         args.l2_regularization_strength = None
     loss = net.loss(input_batch=audio_batch,
                     global_condition_batch=gc_id_batch,
-                    local_condition_batch = lc_id_batch,
+                    local_condition_batch=lc_id_batch,
                     l2_regularization_strength=args.l2_regularization_strength)
     optimizer = optimizer_factory[args.optimizer](
                     learning_rate=args.learning_rate,
@@ -327,6 +327,13 @@ def main():
             else:
                 summary, loss_value, _ = sess.run([summaries, loss, optim])
                 writer.add_summary(summary, step)
+
+                #print(input_batch0)
+                #print(input_batch0.shape)
+                #print(global_condition_batch0)
+                #print(global_condition_batch0.shape)
+                #print(local_condition_batch0)
+                #print(local_condition_batch0.shape)
 
             duration = time.time() - start_time
             print('step {:d} - loss = {:.3f}, ({:.3f} sec/step)'

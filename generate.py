@@ -258,6 +258,7 @@ def main():
     # sample_labels_list = [0]*8000+[1]*8000
     labelsFileName = (args.labels)
     sample_labels_list = read_sample_label(labelsFileName)
+    sample_labels_list = np.fromstring(sample_labels_list, dtype=int, sep=',').reshape(-1, 1)
 
     for step in range(args.samples):
         if args.fast_generation:

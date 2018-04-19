@@ -8,10 +8,12 @@ import librosa
 import numpy as np
 import tensorflow as tf
 
-'''FILE_PATTERN = r'p([0-9]+)_([0-9]+)\.wav' '''
+#FILE_PATTERN = r'p([0-9]+)_([0-9]+)\.wav'          #VCTK Corpus
 #FILE_PATTERN = r'sinus([0-9])\.wav'
-#FILE_PATTERN = r'[0-9]+cat([0-9]+)\.wav'
-FILE_PATTERN = r'([0-9])+signal+([0-9])\.wav'
+#FILE_PATTERN = r'[0-9]+cat([0-9]+)\.wav'           #shape
+#FILE_PATTERN = r'([0-9])+signal+([0-9])\.wav'      #local, localGLobal
+
+FILE_PATTERN = r'lc_train+([0-9]+)\.wav'            #localTrain
 
 '''
 #ibab
@@ -48,6 +50,7 @@ def get_category_cardinality(files):
     return min_id, max_id
 #aleix 22/03/2018
 '''
+'''
 #aleix
 #for localGlobal, etc
 def get_category_cardinality(files):
@@ -72,6 +75,36 @@ def get_category_cardinality(files):
 
     return min_id, max_id, min_id_local, max_id_local
 #aleix
+'''
+#aleix
+#for localTrain
+def get_category_cardinality(files):
+    id_reg_expression = re.compile(FILE_PATTERN)
+    min_id = None
+    max_id = None
+    min_id_local = None
+    max_id_local = None
+    for filename in files:
+        matches = id_reg_expression.findall(filename)[0]
+        id = [int(id_) for id_ in matches]
+        if min_id is None or id < min_id:
+            min_id = id
+        if max_id is None or id > max_id:
+            max_id = id
+        labelsFileName = re.sub('\.wav$', '', filename)+'.txt'
+        labels = read_category_id_local(labelsFileName) #str
+        labels = np.fromstring(labels, dtype=int, sep=',')
+        id_local = np.unique(labels)
+        for i in id_local:
+            if min_id_local is None or id_local[i] < min_id_local:
+                min_id_local = id_local[i]
+            if max_id_local is None or id_local[i] > max_id_local:
+                max_id_local = id_local[i]
+
+    return min_id, max_id, min_id_local, max_id_local
+
+#aleix
+
 
 def randomize_files(files):
     for file in files:
@@ -87,22 +120,37 @@ def find_files(directory, pattern='*.wav'):
             files.append(os.path.join(root, filename))
     return files
 
+#aleix
+def read_category_id_local(labelsFileName):
+    with open(labelsFileName, 'r') as myfile:
+        category_id_local = myfile.read().replace('\n', '')
+    return(category_id_local)
+#aleix
+
 
 def load_generic_audio(directory, sample_rate):
     '''Generator that yields audio waveforms from the directory.'''
-    files = find_files(directory)
+    files = find_files(directory)                     #only.wav
     id_reg_exp = re.compile(FILE_PATTERN)
     print("files length: {}".format(len(files)))
     randomized_files = randomize_files(files)
     for filename in randomized_files:
         ids = id_reg_exp.findall(filename)
+        labelsFileName = re.sub('\.wav$', '', filename)+'.txt'
+        labels = read_category_id_local(labelsFileName) #str
+        category_id_local = np.fromstring(labels, dtype=int, sep=',').reshape(-1, 1) #np.array
+
         if not ids:
             # The file name does not match the pattern containing ids, so
             # there is no id.
             category_id = None
         else:
             # The file name matches the pattern for containing ids.
-            category_id, category_id_local = [int(ids[0][0]),int(ids[0][1])]
+            category_id = int(ids[0][0]) # only for global
+            #category_id, category_id_local = [int(ids[0][0]),int(ids[0][1])] #global and local on name
+            #aleix
+
+
         audio, _ = librosa.load(filename, sr=sample_rate, mono=True)
         audio = audio.reshape(-1, 1)
         yield audio, filename, category_id, category_id_local
@@ -143,7 +191,7 @@ class AudioReader(object):
                  coord,
                  sample_rate,
                  gc_enabled,
-                 lc_enabled,
+                 lc_channels,
                  receptive_field,
                  sample_size=None,
                  silence_threshold=None,
@@ -155,7 +203,7 @@ class AudioReader(object):
         self.receptive_field = receptive_field
         self.silence_threshold = silence_threshold
         self.gc_enabled = gc_enabled
-        self.lc_enabled = lc_enabled
+        self.lc_channels = lc_channels
         self.threads = []
         self.sample_placeholder = tf.placeholder(dtype=tf.float32, shape=None)
         self.queue = tf.PaddingFIFOQueue(queue_size,
@@ -169,10 +217,10 @@ class AudioReader(object):
                                                 shapes=[()])
             self.gc_enqueue = self.gc_queue.enqueue([self.id_placeholder])
 
-        if self.lc_enabled:
-            self.id_placeholder_lc = tf.placeholder(dtype=tf.int32, shape=())
-            self.lc_queue = tf.PaddingFIFOQueue(queue_size, ['int32'],
-                                                shapes=[()])
+        if self.lc_channels:
+            self.id_placeholder_lc = tf.placeholder(dtype=tf.float32, shape=(None, self.lc_channels))
+            self.lc_queue = tf.PaddingFIFOQueue(queue_size, ['float32'],
+                                                shapes=[(None, self.lc_channels)])
             self.lc_enqueue = self.lc_queue.enqueue([self.id_placeholder_lc])
 
         # TODO Find a better way to check this.
@@ -184,7 +232,7 @@ class AudioReader(object):
         if self.gc_enabled and not_all_have_id(files):
             raise ValueError("Global conditioning is enabled, but file names "
                              "do not conform to pattern having id.")
-        if self.lc_enabled and not_all_have_id(files):
+        if self.lc_channels and not_all_have_id(files):
             raise ValueError("Local conditioning is enabled, but file names "
                              "do not conform to pattern having id.")
         # Determine the number of mutually-exclusive categories we will
@@ -204,7 +252,7 @@ class AudioReader(object):
         else:
             self.gc_category_cardinality = None
 
-        if self.lc_enabled:
+        if self.lc_channels:
             _, _, _, self.lc_category_cardinality = get_category_cardinality(files)
             # Add one to the largest index to get the number of categories,
             # since tf.nn.embedding_lookup expects zero-indexing. This
@@ -250,6 +298,8 @@ class AudioReader(object):
 
                 audio = np.pad(audio, [[self.receptive_field, 0], [0, 0]],
                                'constant')
+                category_id_local = np.pad(category_id_local, [[self.receptive_field, 0], [0, 0]],
+                               'constant')
 
                 if self.sample_size:
                     # Cut samples into pieces of size receptive_field +
@@ -263,9 +313,13 @@ class AudioReader(object):
                         if self.gc_enabled:
                             sess.run(self.gc_enqueue, feed_dict={
                                 self.id_placeholder: category_id})
-                        if self.lc_enabled:
+                        if self.lc_channels:
+
+                            category_id_local_piece = category_id_local[:(self.receptive_field +
+                                                                          self.sample_size), :]
+
                             sess.run(self.lc_enqueue, feed_dict={
-                                self.id_placeholder_lc: category_id_local})
+                                self.id_placeholder_lc: category_id_local_piece})
                 else:
                     sess.run(self.enqueue,
                              feed_dict={self.sample_placeholder: audio})
