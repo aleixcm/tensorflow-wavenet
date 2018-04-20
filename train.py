@@ -37,6 +37,8 @@ MOMENTUM = 0.9
 MAX_TO_KEEP = 5
 METADATA = False
 
+plt.switch_backend('agg')               #Need to change the backend to create the plot on the server
+os.environ["CUDA_VISIBLE_DEVICES"]="3"  #Use only GPU 3
 
 def get_arguments():
     def _str_to_bool(s):
@@ -304,7 +306,7 @@ def main():
 
     step = None
     last_saved_step = saved_global_step
-    a=[] #store loss function (aleix)
+    loss_plot = []  # store loss function (aleix)
     try:
         for step in range(saved_global_step + 1, args.num_steps):
             start_time = time.time()
@@ -338,22 +340,40 @@ def main():
             duration = time.time() - start_time
             print('step {:d} - loss = {:.3f}, ({:.3f} sec/step)'
                   .format(step, loss_value, duration))
-            a.append(loss_value)
+            loss_plot.append(loss_value)
             if step % args.checkpoint_every == 0:
                 save(saver, sess, logdir, step)
                 last_saved_step = step
-        plt.figure(1) #store loss function (aleix)
-        plt.plot(a)
-        '''plt.show()'''
-        plt.savefig(os.path.join(logdir, 'loss.png'))
+        plt.figure(1)  # store loss function (aleix)
+        plt.plot(loss_plot)
+        # plt.show()
+        plt.savefig(os.path.join(args.data_dir, 'loss.png'))
+        print()
+        print('Loss .plot saved')
+        file00 = open(os.path.join(args.data_dir, 'loss.txt'), 'w')
+        for item in loss_plot:
+            file00.write("%s\n" % item)
+        file00.close()
+        print('Loss .txt saved')
+        print()
     except KeyboardInterrupt:
         plt.figure(1) #store loss function (aleix)
-        plt.plot(a)
-        '''plt.show()'''
-        plt.savefig(os.path.join(logdir, 'loss.png'))
+        plt.plot(loss_plot)
+        plt.savefig(os.path.join(args.data_dir, 'loss.png'))
+        print()
+        print('Loss plot saved')
+        file00 = open(os.path.join(args.data_dir,'loss.txt'), 'w')
+        for item in loss_plot:
+            file00.write("%s\n" % item)
+        file00.close()
+        print('Loss .txt saved')
+        print()
+        #plt.show()
+
         # Introduce a line break after ^C is displayed so save message
         # is on its own line.
         print()
+        
     finally:
         if step > last_saved_step:
             save(saver, sess, logdir, step)
