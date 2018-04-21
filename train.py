@@ -256,7 +256,7 @@ def main():
     if args.l2_regularization_strength == 0:
         args.l2_regularization_strength = None
     #aleix
-    loss, global_condition_batch, gc_embedding, conv_filter, conv_gate = net.loss(input_batch=audio_batch,
+    loss, global_condition_batch, gc_embedding, conv_filter, conv_filter0, conv_filter1, conv_gate, embedding_table, weights_gc_filter = net.loss(input_batch=audio_batch,
                     global_condition_batch=gc_id_batch,
                     l2_regularization_strength=args.l2_regularization_strength)
     optimizer = optimizer_factory[args.optimizer](
@@ -319,27 +319,45 @@ def main():
                     f.write(tl.generate_chrome_trace_format(show_memory=True))
             else:
                 #aleix
-                summary, loss_value, global_condition_batch0, gc_embedding0, conv_filter0, conv_gate0, _ = sess.run([
-                    summaries, loss, global_condition_batch, gc_embedding,conv_filter, conv_gate, optim])
-                print('global_condition_batch:')
-                print(global_condition_batch0)
-                print(global_condition_batch0.shape)
-                print()
-                print('gc_embedding')
-                print(gc_embedding0)
-                print(gc_embedding0.shape)
-                print()
-                print('conv_filter')
-                print(conv_filter0)
-                print(conv_filter0.shape)
-                print()
-                print('conv_gate')
-                print(conv_gate0)
-                print(conv_gate0.shape)
+                summary, loss_value, global_condition_batch0, gc_embedding0, conv_filter_end, conv_filter0_0, \
+                conv_filter0_1, conv_gate0,embedding_table0, weights_gc_filter0, _ = sess.run([
+                    summaries, loss, global_condition_batch, gc_embedding, conv_filter, conv_filter0, conv_filter1,
+                    conv_gate, embedding_table, weights_gc_filter, optim])
+                #print('global_condition_batch:')
+                #print(global_condition_batch0)
+                #print(global_condition_batch0.shape)
+                #print()
+                #print('gc_embedding')
+                #print(gc_embedding0)
+                #print(gc_embedding0.shape)
+                #print()
+                #print('conv_filter')
+                #print(conv_filter_end)
+                #print(conv_filter_end.shape)
+                #print()
+                #print('conv_filter0')
+                #print(conv_filter0_0)
+                #print(conv_filter0_0.shape)
+                #print()
+                #print('conv_filter1')
+                #print(conv_filter0_1)
+                #print(conv_filter0_1.shape)
+                #print()
+                #print('conv_gate')
+                #print(conv_gate0)
+                #print(conv_gate0.shape)
+                #print()
+                #print('embedding_table')
+                #print(embedding_table0)
+                #print(embedding_table0.shape)
                 #print(target_output00)
                 #print(target_output00.shape)
                 #print(target_output10)
                 #print(target_output10.shape)
+                print()
+                print('weights_gc_filter')
+                print(weights_gc_filter0)
+                print(weights_gc_filter.shape)
                 writer.add_summary(summary, step)
 
             duration = time.time() - start_time

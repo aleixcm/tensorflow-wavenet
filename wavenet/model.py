@@ -1,4 +1,5 @@
 import numpy as np
+np.set_printoptions(threshold=np.nan)
 import tensorflow as tf
 
 from .ops import causal_conv, mu_law_encode
@@ -280,11 +281,22 @@ class WaveNetModel(object):
 
         if global_condition_batch is not None:
             weights_gc_filter = variables['gc_filtweights']
+            #aleix
+            conv_filter0 = tf.nn.conv1d(global_condition_batch,
+                                                     weights_gc_filter,
+                                                     stride=1,
+                                                     padding="SAME",
+                                                     name="gc_filter")
+            conv_filter1 = conv_filter+conv_filter0
+            #aleix
+            '''
             conv_filter = conv_filter + tf.nn.conv1d(global_condition_batch,
                                                      weights_gc_filter,
                                                      stride=1,
                                                      padding="SAME",
                                                      name="gc_filter")
+                                                     
+            '''
             weights_gc_gate = variables['gc_gateweights']
             conv_gate = conv_gate + tf.nn.conv1d(global_condition_batch,
                                                  weights_gc_gate,
@@ -333,7 +345,7 @@ class WaveNetModel(object):
         input_cut = tf.shape(input_batch)[1] - tf.shape(transformed)[1]
         input_batch = tf.slice(input_batch, [0, input_cut, 0], [-1, -1, -1])
 
-        return skip_contribution, input_batch + transformed, conv_filter, conv_gate
+        return skip_contribution, input_batch + transformed, conv_filter, conv_filter0, conv_filter1, conv_gate, weights_gc_filter
 
     def _generator_conv(self, input_batch, state_batch, weights):
         '''Perform convolution for a single convolutional processing step.'''
@@ -411,7 +423,7 @@ class WaveNetModel(object):
         with tf.name_scope('dilated_stack'):
             for layer_index, dilation in enumerate(self.dilations):
                 with tf.name_scope('layer{}'.format(layer_index)):
-                    output, current_layer, conv_filter, conv_gate = self._create_dilation_layer(
+                    output, current_layer, conv_filter, conv_filter0, conv_filter1, conv_gate, weights_gc_filter = self._create_dilation_layer(
                         current_layer, layer_index, dilation,
                         global_condition_batch, output_width)
                     outputs.append(output)
@@ -444,7 +456,7 @@ class WaveNetModel(object):
             if self.use_biases:
                 conv2 = tf.add(conv2, b2)
 
-        return conv2, conv_filter, conv_gate
+        return conv2, conv_filter, conv_filter0, conv_filter1, conv_gate, weights_gc_filter
 
     def _create_generator(self, input_batch, global_condition_batch):
         '''Construct an efficient incremental generator.'''
@@ -568,7 +580,7 @@ class WaveNetModel(object):
                 embedding,
                 [self.batch_size, 1, self.global_condition_channels])
 
-        return embedding
+        return embedding, embedding_table
 
     def predict_proba(self, waveform, global_condition=None, name='wavenet'):
         '''Computes the probability distribution of the next sample based on
@@ -633,7 +645,7 @@ class WaveNetModel(object):
             encoded_input = mu_law_encode(input_batch,
                                           self.quantization_channels)
 
-            gc_embedding = self._embed_gc(global_condition_batch)
+            gc_embedding, embedding_table = self._embed_gc(global_condition_batch)
             encoded = self._one_hot(encoded_input)
             if self.scalar_input:
                 network_input = tf.reshape(
@@ -647,7 +659,7 @@ class WaveNetModel(object):
             network_input = tf.slice(network_input, [0, 0, 0],
                                      [-1, network_input_width, -1])
 
-            raw_output, conv_filter, conv_gate = self._create_network(network_input, gc_embedding)
+            raw_output, conv_filter, conv_filter0, conv_filter1, conv_gate, weights_gc_filter = self._create_network(network_input, gc_embedding)
 
             with tf.name_scope('loss'):
                 # Cut off the samples corresponding to the receptive field
@@ -672,7 +684,7 @@ class WaveNetModel(object):
                 tf.summary.scalar('loss', reduced_loss)
 
                 if l2_regularization_strength is None:
-                    return reduced_loss, global_condition_batch, gc_embedding, conv_filter, conv_gate #aleix
+                    return reduced_loss, global_condition_batch, gc_embedding, conv_filter, conv_filter0, conv_filter1, conv_gate, embedding_table, weights_gc_filter #aleix
                 else:
                     # L2 regularization for all trainable parameters
                     l2_loss = tf.add_n([tf.nn.l2_loss(v)
