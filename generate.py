@@ -260,6 +260,9 @@ def main():
     labelsFileName = (args.labels)
     sample_labels_list = read_sample_label(labelsFileName)
     sample_labels_list = np.fromstring(sample_labels_list, dtype=int, sep=',').reshape(-1, 1)
+    #Adding more channels
+    sample_labels_list =sample_labels_list.reshape(1, -1)
+    sample_labels_list = np.eye(args.lc_channels)[sample_labels_list][0]
 
     for step in range(args.samples):
         if args.fast_generation:

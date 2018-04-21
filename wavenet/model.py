@@ -467,11 +467,11 @@ class WaveNetModel(object):
                                                 shape=(1, -1))
             weights_lc_filter = variables['lc_filtweights']
             weights_lc_filter = weights_lc_filter[0, :, :]
-            output_filter += tf.matmul(local_condition_batch,
+            output_filter += tf.matmul(tf.cast(local_condition_batch, tf.float32),
                                        weights_lc_filter)
             weights_lc_gate = variables['lc_gateweights']
             weights_lc_gate = weights_lc_gate[0, :, :]
-            output_gate += tf.matmul(local_condition_batch,
+            output_gate += tf.matmul(tf.cast(local_condition_batch, tf.float32),
                                      weights_lc_gate)
 
         if self.use_biases:
@@ -720,8 +720,8 @@ class WaveNetModel(object):
                 encoded = self._one_hot(waveform)
 
             gc_embedding = self._embed_gc(global_condition)
-            lc_embedding = self._embed_lc(local_condition)
-            raw_output = self._create_network(encoded, gc_embedding, lc_embedding)
+            #lc_embedding = self._embed_lc(local_condition)
+            raw_output = self._create_network(encoded, gc_embedding, local_condition)
             out = tf.reshape(raw_output, [-1, self.quantization_channels])
             # Cast to float64 to avoid bug in TensorFlow
             proba = tf.cast(
@@ -747,8 +747,8 @@ class WaveNetModel(object):
             encoded = tf.one_hot(waveform, self.quantization_channels)
             encoded = tf.reshape(encoded, [-1, self.quantization_channels])
             gc_embedding = self._embed_gc(global_condition)
-            lc_embedding = self._embed_lc(local_condition)
-            raw_output = self._create_generator(encoded, gc_embedding, lc_embedding)
+            #lc_embedding = self._embed_lc(local_condition)
+            raw_output = self._create_generator(encoded, gc_embedding, local_condition)
             out = tf.reshape(raw_output, [-1, self.quantization_channels])
             proba = tf.cast(
                 tf.nn.softmax(tf.cast(out, tf.float64)), tf.float32)
