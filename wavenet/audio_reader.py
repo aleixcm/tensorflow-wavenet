@@ -300,6 +300,9 @@ class AudioReader(object):
                                'constant')
                 category_id_local = np.pad(category_id_local, [[self.receptive_field, 0], [0, 0]],
                                'constant')
+                # Convert to oneHot. Cannot be a tensor, so use numpy instead
+                category_id_local = category_id_local.reshape(1, -1)
+                category_id_local = np.eye(self.lc_channels)[category_id_local][0]
 
                 if self.sample_size:
                     # Cut samples into pieces of size receptive_field +

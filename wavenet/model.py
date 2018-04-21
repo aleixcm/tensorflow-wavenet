@@ -353,7 +353,9 @@ class WaveNetModel(object):
 
         if local_condition_batch is not None:
             weights_lc_filter = variables['lc_filtweights']
-
+            # Here I modify local_condition_batch in order to get more channels
+            #local_condition_batch = tf.one_hot(tf.cast(local_condition_batch, tf.int32), self.local_condition_channels)
+            print(local_condition_batch)
             lc_filter_output = tf.nn.conv1d(local_condition_batch,
                                             weights_lc_filter,
                                             stride=1,

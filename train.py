@@ -331,12 +331,12 @@ def main():
                     sess.run([summaries, loss, local_condition_batch, input_batch, optim])
                 writer.add_summary(summary, step)
 
-                print('input_batch')
+                #print('input_batch')
                 #print(input_batch0)
-                print(input_batch0.shape)
+                #print(input_batch0.shape)
                 #print(global_condition_batch0)
                 #print(global_condition_batch0.shape)
-                print('local_condition_batch')
+                #print('local_condition_batch')
                 #print(local_condition_batch0)
                 print(local_condition_batch0.shape)
 
