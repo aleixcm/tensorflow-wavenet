@@ -264,7 +264,7 @@ def main():
 
     if args.l2_regularization_strength == 0:
         args.l2_regularization_strength = None
-    loss = net.loss(input_batch=audio_batch,
+    loss, local_condition_batch, input_batch = net.loss(input_batch=audio_batch,
                     global_condition_batch=gc_id_batch,
                     local_condition_batch=lc_id_batch,
                     l2_regularization_strength=args.l2_regularization_strength)
@@ -327,15 +327,18 @@ def main():
                 with open(timeline_path, 'w') as f:
                     f.write(tl.generate_chrome_trace_format(show_memory=True))
             else:
-                summary, loss_value, _ = sess.run([summaries, loss, optim])
+                summary, loss_value, local_condition_batch0, input_batch0, _ = \
+                    sess.run([summaries, loss, local_condition_batch, input_batch, optim])
                 writer.add_summary(summary, step)
 
+                print('input_batch')
                 #print(input_batch0)
-                #print(input_batch0.shape)
+                print(input_batch0.shape)
                 #print(global_condition_batch0)
                 #print(global_condition_batch0.shape)
+                print('local_condition_batch')
                 #print(local_condition_batch0)
-                #print(local_condition_batch0.shape)
+                print(local_condition_batch0.shape)
 
             duration = time.time() - start_time
             print('step {:d} - loss = {:.3f}, ({:.3f} sec/step)'
