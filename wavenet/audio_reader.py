@@ -8,15 +8,16 @@ import librosa
 import numpy as np
 import tensorflow as tf
 
-FILE_PATTERN = r'p([0-9]+)_([0-9]+)\.wav'
+#FILE_PATTERN = r'p([0-9]+)_([0-9]+)\.wav'
 
 #aleix
 #FILE_PATTERN = r'c([0-9]+)file([0-9]+)\.wav' #shape
-#FILE_PATTERN = r'sinus([0-9])\.wav' #twoSin, twoSinOctave, scale
+FILE_PATTERN = r'sinus([0-9])\.wav' #twoSin, twoSinOctave, scale
 #FILE_PATTERN = r'([0-999]+)_signal_([0-9999]+)_([0-9]+).([0-99]+)_([0-99]+)\.wav' #randomSignals
 #aleix
 
-
+'''
+# VCTK, corpus
 def get_category_cardinality(files):
     id_reg_expression = re.compile(FILE_PATTERN)
     min_id = None
@@ -31,10 +32,10 @@ def get_category_cardinality(files):
             max_id = id
 
     return min_id, max_id
-
+'''
 
 ''' aleix 22/03/2018'''
-''' works for format twoSin, scale
+#works for format twoSin, scale
 def get_category_cardinality(files):
     id_reg_expression = re.compile(FILE_PATTERN)
     min_id = None
@@ -48,7 +49,7 @@ def get_category_cardinality(files):
             max_id = id
 
     return min_id, max_id
-'''
+
 ''' aleix 22/03/2018'''
 
 def randomize_files(files):

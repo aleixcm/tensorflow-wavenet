@@ -333,7 +333,7 @@ class WaveNetModel(object):
         input_cut = tf.shape(input_batch)[1] - tf.shape(transformed)[1]
         input_batch = tf.slice(input_batch, [0, input_cut, 0], [-1, -1, -1])
 
-        return skip_contribution, input_batch + transformed
+        return skip_contribution, input_batch + transformed, conv_filter, conv_gate
 
     def _generator_conv(self, input_batch, state_batch, weights):
         '''Perform convolution for a single convolutional processing step.'''
@@ -411,7 +411,7 @@ class WaveNetModel(object):
         with tf.name_scope('dilated_stack'):
             for layer_index, dilation in enumerate(self.dilations):
                 with tf.name_scope('layer{}'.format(layer_index)):
-                    output, current_layer = self._create_dilation_layer(
+                    output, current_layer, conv_filter, conv_gate = self._create_dilation_layer(
                         current_layer, layer_index, dilation,
                         global_condition_batch, output_width)
                     outputs.append(output)
@@ -444,7 +444,7 @@ class WaveNetModel(object):
             if self.use_biases:
                 conv2 = tf.add(conv2, b2)
 
-        return conv2
+        return conv2, conv_filter, conv_gate
 
     def _create_generator(self, input_batch, global_condition_batch):
         '''Construct an efficient incremental generator.'''
@@ -647,7 +647,7 @@ class WaveNetModel(object):
             network_input = tf.slice(network_input, [0, 0, 0],
                                      [-1, network_input_width, -1])
 
-            raw_output = self._create_network(network_input, gc_embedding)
+            raw_output, conv_filter, conv_gate = self._create_network(network_input, gc_embedding)
 
             with tf.name_scope('loss'):
                 # Cut off the samples corresponding to the receptive field
@@ -672,7 +672,7 @@ class WaveNetModel(object):
                 tf.summary.scalar('loss', reduced_loss)
 
                 if l2_regularization_strength is None:
-                    return reduced_loss, target_output0, target_output1 #aleix
+                    return reduced_loss, global_condition_batch, gc_embedding, conv_filter, conv_gate #aleix
                 else:
                     # L2 regularization for all trainable parameters
                     l2_loss = tf.add_n([tf.nn.l2_loss(v)
@@ -686,4 +686,4 @@ class WaveNetModel(object):
                     tf.summary.scalar('l2_loss', l2_loss)
                     tf.summary.scalar('total_loss', total_loss)
 
-                    return total_loss, target_output0, target_output1 #aleix
+                    return total_loss  #aleix
