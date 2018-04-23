@@ -38,7 +38,7 @@ MAX_TO_KEEP = 5
 METADATA = False
 
 plt.switch_backend('agg')               #Need to change the backend to create the plot on the server
-os.environ["CUDA_VISIBLE_DEVICES"]="3"  #Use only GPU 3
+os.environ["CUDA_VISIBLE_DEVICES"]="1"  #Use only GPU 3
 
 def get_arguments():
     def _str_to_bool(s):

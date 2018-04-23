@@ -21,7 +21,7 @@ WAVENET_PARAMS = './wavenet_params.json'
 SAVE_EVERY = None
 SILENCE_THRESHOLD = 0.1
 
-os.environ["CUDA_VISIBLE_DEVICES"]="3" #Use Only GPU 3
+os.environ["CUDA_VISIBLE_DEVICES"]="1" #Use Only GPU 3
 
 def get_arguments():
     def _str_to_bool(s):
