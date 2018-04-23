@@ -12,12 +12,11 @@ c = [2]
 aSamples = 8000
 bSamples = 8000
 cSamples = 8000
-
 def main():
-    sequence = a *aSamples + b*bSamples
-    file00 = open(os.path.join('corpus','local','lc_gen0.txt'), 'w')
+    sequence = c *cSamples + b*bSamples + a*aSamples
+    file00 = open(os.path.join('corpus','localTrain','lc_gen1_24000.txt'), 'w')
     for item in sequence:
-        file00.write("%s\n" % item)
+        file00.write("%s,\n" % item)
 
     file00.close()
 

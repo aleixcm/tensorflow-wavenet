@@ -355,7 +355,7 @@ class WaveNetModel(object):
             weights_lc_filter = variables['lc_filtweights']
             # Here I modify local_condition_batch in order to get more channels
             #local_condition_batch = tf.one_hot(tf.cast(local_condition_batch, tf.int32), self.local_condition_channels)
-            print(local_condition_batch)
+            #print(local_condition_batch)
             lc_filter_output = tf.nn.conv1d(local_condition_batch,
                                             weights_lc_filter,
                                             stride=1,
@@ -811,7 +811,7 @@ class WaveNetModel(object):
                 tf.summary.scalar('loss', reduced_loss)
 
                 if l2_regularization_strength is None:
-                    return reduced_loss, local_condition_batch, input_batch
+                    return reduced_loss, input_batch
                 else:
                     # L2 regularization for all trainable parameters
                     l2_loss = tf.add_n([tf.nn.l2_loss(v)
@@ -825,4 +825,4 @@ class WaveNetModel(object):
                     tf.summary.scalar('l2_loss', l2_loss)
                     tf.summary.scalar('total_loss', total_loss)
 
-                    return total_loss, local_condition_batch, input_batch
+                    return total_loss, input_batch

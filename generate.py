@@ -10,6 +10,8 @@ import librosa
 import numpy as np
 import tensorflow as tf
 
+import time
+
 from wavenet import WaveNetModel, mu_law_decode, mu_law_encode, audio_reader
 
 SAMPLES = 16000
@@ -201,7 +203,11 @@ def main():
 
 
     samples = tf.placeholder(tf.int32)
-    sample_labels = tf.placeholder(tf.int32) #aleix
+    if args.labels is not None:
+        sample_labels = tf.placeholder(tf.int32) #aleix
+    else:
+        sample_labels = None
+
 
     if args.fast_generation:
         #next_sample = net.predict_proba_incremental(samples, args.gc_id, args.lc_id)
@@ -220,6 +226,7 @@ def main():
     saver = tf.train.Saver(variables_to_restore)
 
     print('Restoring model from {}'.format(args.checkpoint))
+    start_time = time.time()
     saver.restore(sess, args.checkpoint)
 
     decode = mu_law_decode(samples, wavenet_params['quantization_channels'])
@@ -257,19 +264,25 @@ def main():
 
     # aleix
     # sample_labels_list = [0]*8000+[1]*8000
-    labelsFileName = (args.labels)
-    sample_labels_list = read_sample_label(labelsFileName)
-    sample_labels_list = np.fromstring(sample_labels_list, dtype=int, sep=',').reshape(-1, 1)
-    #Adding more channels
-    sample_labels_list =sample_labels_list.reshape(1, -1)
-    sample_labels_list = np.eye(args.lc_channels)[sample_labels_list][0]
+    if args.labels is not None:
+        labelsFileName = (args.labels)
+        sample_labels_list = read_sample_label(labelsFileName)
+        sample_labels_list = np.fromstring(sample_labels_list, dtype=int, sep=',').reshape(-1, 1)
+        #Adding more channels
+        sample_labels_list =sample_labels_list.reshape(1, -1)
+        sample_labels_list = np.eye(args.lc_channels)[sample_labels_list][0]
+    else:
+        sample_labels_list = None
 
     for step in range(args.samples):
         if args.fast_generation:
             outputs = [next_sample]
             outputs.extend(net.push_ops)
             window = waveform[-1]
-            label_window = sample_labels_list[step]
+            if sample_labels_list is not None:
+                label_window = sample_labels_list[step]
+            else:
+                label_window = None
         else:
             if len(waveform) > net.receptive_field:
                 window = waveform[-net.receptive_field:]
@@ -279,7 +292,11 @@ def main():
 
         # Run the WaveNet to predict the next sample.
         #prediction = sess.run(outputs, feed_dict={samples: window})[0]
-        prediction = sess.run(outputs, feed_dict={samples: window, sample_labels: label_window})[0]
+        if args.labels is not None:
+            prediction = sess.run(outputs, feed_dict={samples: window, sample_labels: label_window})[0]
+        else:
+            prediction = sess.run(outputs, feed_dict={samples: window})[0]
+
 
 
         # Scale prediction distribution using temperature.
@@ -334,6 +351,9 @@ def main():
         write_wav(out, wavenet_params['sample_rate'], args.wav_out_path)
 
     print('Finished generating. The result can be viewed in TensorBoard.')
+    print()
+    duration = time.time() - start_time
+    print('Generation time: %s sec' % duration)
 
 
 if __name__ == '__main__':

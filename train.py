@@ -264,7 +264,7 @@ def main():
 
     if args.l2_regularization_strength == 0:
         args.l2_regularization_strength = None
-    loss, local_condition_batch, input_batch = net.loss(input_batch=audio_batch,
+    loss, input_batch = net.loss(input_batch=audio_batch,
                     global_condition_batch=gc_id_batch,
                     local_condition_batch=lc_id_batch,
                     l2_regularization_strength=args.l2_regularization_strength)
@@ -307,6 +307,7 @@ def main():
     step = None
     last_saved_step = saved_global_step
     loss_plot = []  # store loss function (aleix)
+    duration_saved = []
     try:
         for step in range(saved_global_step + 1, args.num_steps):
             start_time = time.time()
@@ -327,8 +328,8 @@ def main():
                 with open(timeline_path, 'w') as f:
                     f.write(tl.generate_chrome_trace_format(show_memory=True))
             else:
-                summary, loss_value, local_condition_batch0, input_batch0, _ = \
-                    sess.run([summaries, loss, local_condition_batch, input_batch, optim])
+                summary, loss_value, input_batch0, _ = \
+                    sess.run([summaries, loss, input_batch, optim])
                 writer.add_summary(summary, step)
 
                 #print('input_batch')
@@ -338,38 +339,80 @@ def main():
                 #print(global_condition_batch0.shape)
                 #print('local_condition_batch')
                 #print(local_condition_batch0)
-                print(local_condition_batch0.shape)
+                #print(local_condition_batch0.shape)
 
             duration = time.time() - start_time
             print('step {:d} - loss = {:.3f}, ({:.3f} sec/step)'
                   .format(step, loss_value, duration))
             loss_plot.append(loss_value)
+            duration_saved.append(duration)
             if step % args.checkpoint_every == 0:
                 save(saver, sess, logdir, step)
                 last_saved_step = step
         plt.figure(1)  # store loss function (aleix)
         plt.plot(loss_plot)
         # plt.show()
-        plt.savefig(os.path.join(args.data_dir, 'loss.png'))
+        #aleix
+        #some interesting information to store
         print()
-        print('Loss .plot saved')
-        file00 = open(os.path.join(args.data_dir, 'loss.txt'), 'w')
+        directory = os.path.join('./', args.data_dir, STARTED_DATESTRING)
+        os.makedirs(directory)
+        print('Created new directory', directory)
+        plt.savefig(os.path.join(directory, 'loss.png'))
+        print('loss.png saved')
+
+        file00 = open(os.path.join(directory, 'loss.txt'), 'w')
         for item in loss_plot:
             file00.write("%s\n" % item)
         file00.close()
-        print('Loss .txt saved')
+        print('loss.txt saved')
+
+        file01 = open(os.path.join(directory, 'durations.txt'), 'w')
+        for item in duration_saved:
+            file01.write("%s\n" % item)
+        file01.close()
+        print('durations.txt saved')
+
+        file02 = open(os.path.join(directory, 'info.txt'), 'w')
+        file02.write('Dilations: ')
+        for item in wavenet_params["dilations"]:
+            file02.write('%s, ' %item)
+
+        file02.write('\nReceptive Field: %s\n' %reader.receptive_field)
+        file02.write('Steps: %s\n' %step)
+        file02.write('Loss Value: %s\n' %loss_value)
+        file02.write('Training time: %s sec\n' %sum(duration_saved))
+        file02.write('Quantization channels: %s\n' % wavenet_params["quantization_channels"])
+        file02.write('lc_channels: %s\n' % args.lc_channels)
+        file02.close()
+
+        print('info.txt saved')
+
+
         print()
+        #aleix
     except KeyboardInterrupt:
+        print()
+        directory = os.path.join('./', args.data_dir, STARTED_DATESTRING)
+        os.makedirs(directory)
+        print('Created new directory', directory)
+
         plt.figure(1) #store loss function (aleix)
         plt.plot(loss_plot)
-        plt.savefig(os.path.join(args.data_dir, 'loss.png'))
-        print()
+        plt.savefig(os.path.join(directory, 'loss.png'))
         print('Loss plot saved')
-        file00 = open(os.path.join(args.data_dir,'loss.txt'), 'w')
+
+        file00 = open(os.path.join(directory, 'loss.txt'), 'w')
         for item in loss_plot:
             file00.write("%s\n" % item)
         file00.close()
         print('Loss .txt saved')
+
+        file01 = open(os.path.join(directory, 'durations.txt'), 'w')
+        for item in duration_saved:
+            file01.write("%s\n" % item)
+        file01.close()
+        print('durations.txt saved')
         print()
         #plt.show()
 

@@ -9,8 +9,8 @@ import numpy as np
 import tensorflow as tf
 
 #FILE_PATTERN = r'p([0-9]+)_([0-9]+)\.wav'          #VCTK Corpus
-#FILE_PATTERN = r'sinus([0-9])\.wav'
-#FILE_PATTERN = r'[0-9]+cat([0-9]+)\.wav'           #shape
+#FILE_PATTERN = r'sinus([0-9])\.wav'                #scale
+#FILE_PATTERN = r'([0-9]+)cat([0-9]+)\.wav'         #shape
 #FILE_PATTERN = r'([0-9])+signal+([0-9])\.wav'      #local, localGLobal
 
 FILE_PATTERN = r'lc_train+([0-9]+)\.wav'            #localTrain
@@ -86,20 +86,25 @@ def get_category_cardinality(files):
     max_id_local = None
     for filename in files:
         matches = id_reg_expression.findall(filename)[0]
-        id = [int(id_) for id_ in matches]
+        #recording_id, id = [int(id_) for id_ in matches]   #for shape use this
+        #id = int(matches)                                  #scale use this
+        id = [int(id_) for id_ in matches]                 #for localTrain
         if min_id is None or id < min_id:
             min_id = id
         if max_id is None or id > max_id:
             max_id = id
         labelsFileName = re.sub('\.wav$', '', filename)+'.txt'
-        labels = read_category_id_local(labelsFileName) #str
-        labels = np.fromstring(labels, dtype=int, sep=',')
-        id_local = np.unique(labels)
-        for i in id_local:
-            if min_id_local is None or id_local[i] < min_id_local:
-                min_id_local = id_local[i]
-            if max_id_local is None or id_local[i] > max_id_local:
-                max_id_local = id_local[i]
+        if os.path.isfile(labelsFileName):
+            labels = read_category_id_local(labelsFileName) #str
+            labels = np.fromstring(labels, dtype=int, sep=',')
+            id_local = np.unique(labels)
+            for i in id_local:
+                if min_id_local is None or id_local[i] < min_id_local:
+                    min_id_local = id_local[i]
+                if max_id_local is None or id_local[i] > max_id_local:
+                    max_id_local = id_local[i]
+            else:
+                id_local = None
 
     return min_id, max_id, min_id_local, max_id_local
 
@@ -137,8 +142,11 @@ def load_generic_audio(directory, sample_rate):
     for filename in randomized_files:
         ids = id_reg_exp.findall(filename)
         labelsFileName = re.sub('\.wav$', '', filename)+'.txt'
-        labels = read_category_id_local(labelsFileName) #str
-        category_id_local = np.fromstring(labels, dtype=int, sep=',').reshape(-1, 1) #np.array
+        if os.path.isfile(labelsFileName):
+            labels = read_category_id_local(labelsFileName) #str
+            category_id_local = np.fromstring(labels, dtype=int, sep=',').reshape(-1, 1) #np.array
+        else:
+            category_id_local = None
 
         if not ids:
             # The file name does not match the pattern containing ids, so
@@ -149,7 +157,6 @@ def load_generic_audio(directory, sample_rate):
             category_id = int(ids[0][0]) # only for global
             #category_id, category_id_local = [int(ids[0][0]),int(ids[0][1])] #global and local on name
             #aleix
-
 
         audio, _ = librosa.load(filename, sr=sample_rate, mono=True)
         audio = audio.reshape(-1, 1)
@@ -298,11 +305,14 @@ class AudioReader(object):
 
                 audio = np.pad(audio, [[self.receptive_field, 0], [0, 0]],
                                'constant')
-                category_id_local = np.pad(category_id_local, [[self.receptive_field, 0], [0, 0]],
-                               'constant')
-                # Convert to oneHot. Cannot be a tensor, so use numpy instead
-                category_id_local = category_id_local.reshape(1, -1)
-                category_id_local = np.eye(self.lc_channels)[category_id_local][0]
+
+                if category_id_local is not None:
+                    # Adding 0 padding of receptive field size at the beggining. Because of causal convolution
+                    category_id_local = np.pad(category_id_local, [[self.receptive_field, 0], [0, 0]],
+                                   'constant')
+                    # Convert to oneHot. Cannot be a tensor, so use numpy instead
+                    category_id_local = category_id_local.reshape(1, -1)
+                    category_id_local = np.eye(self.lc_channels)[category_id_local][0]
 
                 if self.sample_size:
                     # Cut samples into pieces of size receptive_field +
