@@ -256,8 +256,7 @@ def main():
     if args.l2_regularization_strength == 0:
         args.l2_regularization_strength = None
     #aleix
-    loss, global_condition_batch, gc_embedding, conv_filter, conv_filter0, conv_filter1, conv_gate, \
-    embedding_table, weights_gc_filter, input_batch = net.loss(input_batch=audio_batch,
+    loss = net.loss(input_batch=audio_batch,
                     global_condition_batch=gc_id_batch,
                     l2_regularization_strength=args.l2_regularization_strength)
     optimizer = optimizer_factory[args.optimizer](
@@ -320,10 +319,7 @@ def main():
                     f.write(tl.generate_chrome_trace_format(show_memory=True))
             else:
                 #aleix
-                summary, loss_value, global_condition_batch0, gc_embedding0, conv_filter_end, conv_filter0_0, \
-                conv_filter0_1, conv_gate0,embedding_table0, weights_gc_filter0,input_batch0, _ = sess.run([
-                    summaries, loss, global_condition_batch, gc_embedding, conv_filter, conv_filter0, conv_filter1,
-                    conv_gate, embedding_table, weights_gc_filter, input_batch, optim])
+                summary, loss_value, _ = sess.run([summaries, loss, optim])
                 #print('global_condition_batch:')
                 #print(global_condition_batch0)
                 #print(global_condition_batch0.shape)
