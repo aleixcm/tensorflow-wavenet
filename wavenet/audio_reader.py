@@ -76,6 +76,7 @@ def get_category_cardinality(files):
     return min_id, max_id, min_id_local, max_id_local
 #aleix
 '''
+'''
 #aleix
 #for localTrain
 def get_category_cardinality(files):
@@ -94,7 +95,7 @@ def get_category_cardinality(files):
         if max_id is None or id > max_id:
             max_id = id
         labelsFileName = re.sub('\.wav$', '', filename)+'.txt'
-        if os.path.isfile(labelsFileName):
+        if os.path.isfile(labelsFileName) is not None:
             labels = read_category_id_local(labelsFileName) #str
             labels = np.fromstring(labels, dtype=int, sep=',')
             id_local = np.unique(labels)
@@ -103,8 +104,42 @@ def get_category_cardinality(files):
                     min_id_local = id_local[i]
                 if max_id_local is None or id_local[i] > max_id_local:
                     max_id_local = id_local[i]
-            else:
-                id_local = None
+        else:
+            id_local = None
+
+    return min_id, max_id, min_id_local, max_id_local
+
+#aleix
+'''
+#aleix
+#for localTrainBigDataset
+def get_category_cardinality(files):
+    id_reg_expression = re.compile(FILE_PATTERN)
+    min_id = None
+    max_id = None
+    min_id_local = None
+    max_id_local = None
+    for filename in files:
+        matches = id_reg_expression.findall(filename)[0]
+        #recording_id, id = [int(id_) for id_ in matches]   #for shape use this
+        #id = int(matches)                                  #scale use this
+        id = [int(id_) for id_ in matches]                 #for localTrain
+        if min_id is None or id < min_id:
+            min_id = id
+        if max_id is None or id > max_id:
+            max_id = id
+        labelsFileName = re.sub('\.wav$', '', filename)+'.txt'
+        if os.path.isfile(labelsFileName) is not None:
+            labels = read_category_id_local(labelsFileName) #str
+            labels = np.fromstring(labels, dtype=int, sep=',')
+            id_local = np.unique(labels)
+            for i in range(len(id_local)):
+                if min_id_local is None or id_local[i] < min_id_local:
+                    min_id_local = id_local[i]
+                if max_id_local is None or id_local[i] > max_id_local:
+                    max_id_local = id_local[i]
+        else:
+            id_local = None
 
     return min_id, max_id, min_id_local, max_id_local
 
