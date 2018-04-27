@@ -37,8 +37,8 @@ MOMENTUM = 0.9
 MAX_TO_KEEP = 5
 METADATA = False
 
-plt.switch_backend('agg')               #Need to change the backend to create the plot on the server
-os.environ["CUDA_VISIBLE_DEVICES"]="1"  #Use only GPU 3
+plt.switch_backend('agg')                #Need to change the backend to create the plot on the server
+#os.environ["CUDA_VISIBLE_DEVICES"] ="2"  #Use only GPU 3
 
 def get_arguments():
     def _str_to_bool(s):
@@ -264,7 +264,7 @@ def main():
 
     if args.l2_regularization_strength == 0:
         args.l2_regularization_strength = None
-    loss, input_batch = net.loss(input_batch=audio_batch,
+    loss = net.loss(input_batch=audio_batch,
                     global_condition_batch=gc_id_batch,
                     local_condition_batch=lc_id_batch,
                     l2_regularization_strength=args.l2_regularization_strength)
@@ -328,8 +328,8 @@ def main():
                 with open(timeline_path, 'w') as f:
                     f.write(tl.generate_chrome_trace_format(show_memory=True))
             else:
-                summary, loss_value, input_batch0, _ = \
-                    sess.run([summaries, loss, input_batch, optim])
+                summary, loss_value, _ = \
+                    sess.run([summaries, loss, optim])
                 writer.add_summary(summary, step)
 
                 #print('input_batch')

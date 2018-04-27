@@ -811,7 +811,7 @@ class WaveNetModel(object):
                 tf.summary.scalar('loss', reduced_loss)
 
                 if l2_regularization_strength is None:
-                    return reduced_loss, input_batch
+                    return reduced_loss
                 else:
                     # L2 regularization for all trainable parameters
                     l2_loss = tf.add_n([tf.nn.l2_loss(v)
@@ -825,4 +825,4 @@ class WaveNetModel(object):
                     tf.summary.scalar('l2_loss', l2_loss)
                     tf.summary.scalar('total_loss', total_loss)
 
-                    return total_loss, input_batch
+                    return total_loss
