@@ -346,8 +346,28 @@ class AudioReader(object):
                     category_id_local = np.pad(category_id_local, [[self.receptive_field, 0], [0, 0]],
                                    'constant')
                     # Convert to oneHot. Cannot be a tensor, so use numpy instead
+                    # Add previous, current, next
+                    for i in range(len(category_id_local)):
+                        if i == 0:
+                            category_id_local_prev=np.array([0])
+                            category_id_local_next=np.array(category_id_local[i+1])
+                        elif i == len(category_id_local)-1:
+                            category_id_local_prev = np.append(category_id_local_prev, category_id_local[i-1])
+                            category_id_local_next = np.append(category_id_local_next, category_id_local[i])
+                        else:
+                            category_id_local_prev = np.append(category_id_local_prev, category_id_local[i-1])
+                            category_id_local_next = np.append(category_id_local_next, category_id_local[i+1])
+
                     category_id_local = category_id_local.reshape(1, -1)
-                    category_id_local = np.eye(self.lc_channels)[category_id_local][0]
+                    category_id_local_prev = category_id_local_prev.reshape(1,-1)
+                    category_id_local_next = category_id_local_next.reshape(1, -1)
+
+                    category_id_local = np.eye(int(self.lc_channels / 3))[category_id_local][0]
+                    category_id_local_prev = np.eye(int(self.lc_channels / 3))[category_id_local_prev][0]
+                    category_id_local_next = np.eye(int(self.lc_channels / 3))[category_id_local_next][0]
+
+                    category_id_local = np.append(category_id_local_prev, category_id_local, axis=1)
+                    category_id_local = np.append(category_id_local, category_id_local_next, axis=1)
 
                 if self.sample_size:
                     # Cut samples into pieces of size receptive_field +

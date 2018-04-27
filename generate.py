@@ -268,9 +268,33 @@ def main():
         labelsFileName = (args.labels)
         sample_labels_list = read_sample_label(labelsFileName)
         sample_labels_list = np.fromstring(sample_labels_list, dtype=int, sep=',').reshape(-1, 1)
-        #Adding more channels
-        sample_labels_list =sample_labels_list.reshape(1, -1)
-        sample_labels_list = np.eye(args.lc_channels)[sample_labels_list][0]
+
+        # Convert to oneHot. Cannot be a tensor, so use numpy instead
+        # Add previous, current, next
+        for i in range(len(sample_labels_list)):
+            if i == 0:
+                sample_labels_list_prev = np.array([0])
+                sample_labels_list_next = np.array(sample_labels_list[i + 1])
+            elif i == len(sample_labels_list) - 1:
+                sample_labels_list_prev = np.append(sample_labels_list_prev, sample_labels_list[i - 1])
+                sample_labels_list_next = np.append(sample_labels_list_next, sample_labels_list[i])
+            else:
+                sample_labels_list_prev = np.append(sample_labels_list_prev, sample_labels_list[i - 1])
+                sample_labels_list_next = np.append(sample_labels_list_next, sample_labels_list[i + 1])
+
+        sample_labels_list = sample_labels_list.reshape(1, -1)
+        sample_labels_list_prev = sample_labels_list_prev.reshape(1, -1)
+        sample_labels_list_next = sample_labels_list_next.reshape(1, -1)
+
+        sample_labels_list = np.eye(int(args.lc_channels / 3))[sample_labels_list][0]
+        sample_labels_list_prev = np.eye(int(args.lc_channels / 3))[sample_labels_list_prev][0]
+        sample_labels_list_next = np.eye(int(args.lc_channels / 3))[sample_labels_list_next][0]
+
+        sample_labels_list = np.append(sample_labels_list_prev, sample_labels_list, axis=1)
+        sample_labels_list = np.append(sample_labels_list, sample_labels_list_next, axis=1)
+
+        #sample_labels_list =sample_labels_list.reshape(1, -1)
+        #sample_labels_list = np.eye(args.lc_channels)[sample_labels_list][0]
     else:
         sample_labels_list = None
 

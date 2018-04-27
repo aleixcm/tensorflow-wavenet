@@ -56,7 +56,7 @@ def genFile(sequence, sampleSequence, c):
         newSequence = int(sampleSequence[i]) * [sequence[i]]
         fullSequence = fullSequence + newSequence
 
-    file00 = open(os.path.join('corpus', 'localTrainBigDataset', 'lc_train%s.txt' % c), 'w')
+    file00 = open(os.path.join('corpus', 'localTrainBigDataset_noAmp', 'lc_train%s.txt' % c), 'w')
     for item in fullSequence:
         file00.write('%i,\n' % item)
 
@@ -75,13 +75,14 @@ def genSignals(sequence, sampleSequence, c):
         # convert categories to frequencies
         freq = case(sequence[i])
         nSamples = np.arange(sampleSequence[i])
-        a = random.randint(25, 100)/100
+        #a = random.randint(25, 100)/100
+        a = 1
         y0 = a*np.sin(2*np.pi*freq*nSamples / fs)
         y0 = y0.tolist()
         y = y + y0
     noise = 0.01*np.random.normal(0, 1, len(y))
     y = np.asarray(y) + noise
-    scipy.io.wavfile.write(os.path.join('corpus', 'localTrainBigDataset', 'lc_train%s.wav' % c), fs, y)
+    scipy.io.wavfile.write(os.path.join('corpus', 'localTrainBigDataset_noAmp', 'lc_train%s.wav' % c), fs, y)
 
 def main():
     for c in range(0,100):
