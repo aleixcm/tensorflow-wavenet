@@ -1,45 +1,55 @@
-# We'll need numpy for some mathematical operations
 import numpy as np
-
-# matplotlib for displaying the output
 import matplotlib.pyplot as plt
 import matplotlib.style as ms
-ms.use('seaborn-muted')
-
-# and IPython.display for audio output
-import IPython.display
-
-# Librosa for audio
-import librosa
-# And the display module for visualization
 import librosa.display
+import scipy.io.wavfile as wavfile
 
-# or uncomment the line below and point it at your favorite song:
-#
-# audio_path = '/path/to/your/favorite/song.mp3'
+def main():
+    y, sr = librosa.load('corpus/localTrainBigDataset_noAmp2/lc_train5.wav', sr=16000)
+    # mel-scaled power (energy-squared) spectrogram
+    S = librosa.feature.melspectrogram(y, sr=sr, n_mels=128)
+    # Convert to log scale (dB). We'll use the peak power (max) as reference.
+    log_S = librosa.power_to_db(S, ref=np.max)
+    # Find max
+    n_mel = []
+    for i in range(len(log_S[0])):
+        col = log_S[:, i]
+        max_ind = np.argmax(col)
+        n_mel = np.append(n_mel, max_ind)
 
-y, sr = librosa.load('corpus/one/1_jackson_0.wav', sr=16000)
+    # Get Labels
+    labels = np.empty(n_mel.size)
+    for i, item in enumerate(n_mel):
+        if item <= 28:
+            labels[i] = 0
+        elif item > 28 and item <= 45:
+            labels[i] = 1
+        else:
+            labels[i] = 2
 
-# Let's make and display a mel-scaled power (energy-squared) spectrogram
-S = librosa.feature.melspectrogram(y, sr=sr, n_mels=128)
+    # Upsampling: Nearest Neighbour Interpolation?
+    padding = int(len(y)/len(labels)/2)
+    upLabels = []
+    for i, item in enumerate(labels):
+        padLabel = np.pad([int(labels[i])], (padding, padding-1), 'constant', constant_values=item)
+        upLabels = np.append(upLabels, padLabel)
+    # Fix lenghts
+    if len(upLabels) > len(y):
+        upLabels = upLabels[:len(y)]
+    elif len(upLabels) < len(y):
+        diff = len(y)-len(upLabels)
+        upLabels = np.pad(upLabels, (0, diff), 'constant', constant_values=upLabels[len(upLabels)-1])
 
-# Convert to log scale (dB). We'll use the peak power (max) as reference.
-log_S = librosa.power_to_db(S, ref=np.max)
+    '''
+    # plot
+    plt.figure(figsize=(12,4))
+    librosa.display.specshow(log_S, sr=sr, x_axis='time', y_axis='mel')
+    plt.title('mel power spectrogram')
+    plt.colorbar(format='%+02.0f dB')
+    plt.tight_layout()
 
-# Make a new figure
-plt.figure(figsize=(12,4))
+    plt.show()
+    '''
 
-# Display the spectrogram on a mel scale
-# sample rate and hop length parameters are used to render the time axis
-librosa.display.specshow(log_S, sr=sr, x_axis='time', y_axis='mel')
-
-# Put a descriptive title on the plot
-plt.title('mel power spectrogram')
-
-# draw a color bar
-plt.colorbar(format='%+02.0f dB')
-
-# Make the figure layout compact
-plt.tight_layout()
-
-plt.show()
+if __name__ == '__main__':
+    main()

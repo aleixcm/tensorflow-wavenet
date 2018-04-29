@@ -111,6 +111,7 @@ def get_category_cardinality(files):
 
 #aleix
 '''
+'''
 #aleix
 #for localTrainBigDataset
 def get_category_cardinality(files):
@@ -144,7 +145,88 @@ def get_category_cardinality(files):
     return min_id, max_id, min_id_local, max_id_local
 
 #aleix
+'''
+#aleix
+#Perform Mel Spectogram to get labels
+def get_labels(filename):
+    y, sr = librosa.load(filename, sr=16000)
+    # mel-scaled power (energy-squared) spectrogram
+    S = librosa.feature.melspectrogram(y, sr=sr, n_mels=128)
+    # Convert to log scale (dB). We'll use the peak power (max) as reference.
+    log_S = librosa.power_to_db(S, ref=np.max)
+    # Find max
+    n_mel = []
+    for i in range(len(log_S[0])):
+        col = log_S[:, i]
+        max_ind = np.argmax(col)
+        n_mel = np.append(n_mel, max_ind)
 
+    # Get Labels
+    labels = np.empty(n_mel.size)
+    for i, item in enumerate(n_mel):
+        if item <= 28:
+            labels[i] = 0
+        elif item > 28 and item <= 45:
+            labels[i] = 1
+        else:
+            labels[i] = 2
+
+    # Upsampling: Nearest Neighbour Interpolation?
+    padding = int(len(y) / len(labels) / 2)
+    upLabels = []
+    for i, item in enumerate(labels):
+        padLabel = np.pad([int(labels[i])], (padding, padding - 1), 'constant', constant_values=item)
+        upLabels = np.append(upLabels, padLabel)
+    # Fix lenghts
+    if len(upLabels) > len(y):
+        upLabels = upLabels[:len(y)]
+    elif len(upLabels) < len(y):
+        diff = len(y) - len(upLabels)
+        upLabels = np.pad(upLabels, (0, diff), 'constant', constant_values=upLabels[len(upLabels) - 1])
+
+    #Write upLabels to a .txt file
+    base = os.path.splitext(filename)[0]
+    filenametxt = base+'.txt'
+    file00 = open(filenametxt, 'w')
+    for item in upLabels:
+        file00.write('%i,\n' % item)
+    file00.close()
+
+#for localTrainBigDataset
+def get_category_cardinality(files):
+    id_reg_expression = re.compile(FILE_PATTERN)
+    min_id = None
+    max_id = None
+    min_id_local = None
+    max_id_local = None
+    for filename in files:
+        matches = id_reg_expression.findall(filename)[0]
+        #recording_id, id = [int(id_) for id_ in matches]   #for shape use this
+        #id = int(matches)                                  #scale use this
+        id = [int(id_) for id_ in matches]                  #for localTrain
+        if min_id is None or id < min_id:
+            min_id = id
+        if max_id is None or id > max_id:
+            max_id = id
+        #create labelsFileName
+        get_labels(filename)
+        #Check that labels file exist and get cardinality
+        labelsFileName = re.sub('\.wav$', '', filename)+'.txt'
+        if os.path.isfile(labelsFileName) is not None:
+            labels = read_category_id_local(labelsFileName) #str
+            labels = np.fromstring(labels, dtype=int, sep=',')
+            id_local = np.unique(labels)
+            for i in range(len(id_local)):
+                if min_id_local is None or id_local[i] < min_id_local:
+                    min_id_local = id_local[i]
+                if max_id_local is None or id_local[i] > max_id_local:
+                    max_id_local = id_local[i]
+        else:
+            id_local = None
+
+    return min_id, max_id, min_id_local, max_id_local
+
+#aleix
 
 def randomize_files(files):
     for file in files:
@@ -394,7 +476,7 @@ class AudioReader(object):
                     if self.gc_enabled:
                         sess.run(self.gc_enqueue,
                                  feed_dict={self.id_placeholder: category_id})
-                    if self.lc_enabled:
+                    if self.lc_channels:
                         sess.run(self.lc_enqueue,
                                  feed_dict={self.id_placeholder_lc: category_id_local})
 

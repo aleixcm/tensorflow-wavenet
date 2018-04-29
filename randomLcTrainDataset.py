@@ -56,7 +56,7 @@ def genFile(sequence, sampleSequence, c):
         newSequence = int(sampleSequence[i]) * [sequence[i]]
         fullSequence = fullSequence + newSequence
 
-    file00 = open(os.path.join('corpus', 'localTrainBigDataset_noAmp', 'lc_train%s.txt' % c), 'w')
+    file00 = open(os.path.join('corpus', 'localTrainBigDataset_noAmp3', 'lc_train%s.txt' % c), 'w')
     for item in fullSequence:
         file00.write('%i,\n' % item)
 
