@@ -5,27 +5,38 @@ import librosa.display
 import scipy.io.wavfile as wavfile
 
 def main():
-    y, sr = librosa.load('corpus/localTrainBigDataset_noAmp2/lc_train5.wav', sr=16000)
+    y, sr = librosa.load('corpus/hangDrum/sound0.wav', sr=16000)
     # mel-scaled power (energy-squared) spectrogram
     S = librosa.feature.melspectrogram(y, sr=sr, n_mels=128)
     # Convert to log scale (dB). We'll use the peak power (max) as reference.
     log_S = librosa.power_to_db(S, ref=np.max)
     # Find max
     n_mel = []
+    labels = []
+    #for i in range(len(S[0])): in case that we want to calculate the mean use S
     for i in range(len(log_S[0])):
+        #col = S[:, i] in case that we want to calculate the mean use S
         col = log_S[:, i]
-        max_ind = np.argmax(col)
-        n_mel = np.append(n_mel, max_ind)
 
-    # Get Labels
-    labels = np.empty(n_mel.size)
-    for i, item in enumerate(n_mel):
-        if item <= 28:
-            labels[i] = 0
-        elif item > 28 and item <= 45:
-            labels[i] = 1
+        # If we calculate the mean per section, in yes dataset is always 0. We couldn't condition in that way
+        #ampC0 = np.mean(col[:43])
+        #ampC1 = np.mean(col[43:86])
+        #ampC2 = np.mean(col[86:128])
+
+        #amp = np.append(ampC0, ampC1)
+        #amp = np.append(amp, ampC1)
+        #label = np.argmax(amp)
+        #labels = np.append(labels, label)
+
+        ampIndex = np.argmax(col)
+        if ampIndex <= 42:
+            label = 0
+        elif ampIndex > 43 and ampIndex <=86:
+            label = 1
         else:
-            labels[i] = 2
+            label = 2
+
+        labels = np.append(labels, label)
 
     # Upsampling: Nearest Neighbour Interpolation?
     padding = int(len(y)/len(labels)/2)
@@ -40,10 +51,12 @@ def main():
         diff = len(y)-len(upLabels)
         upLabels = np.pad(upLabels, (0, diff), 'constant', constant_values=upLabels[len(upLabels)-1])
 
+    print(labels)
+    #plot
     '''
-    # plot
     plt.figure(figsize=(12,4))
     librosa.display.specshow(log_S, sr=sr, x_axis='time', y_axis='mel')
+    #librosa.display.specshow(S, sr=sr, x_axis='time', y_axis='mel')
     plt.title('mel power spectrogram')
     plt.colorbar(format='%+02.0f dB')
     plt.tight_layout()
