@@ -95,7 +95,7 @@ def get_arguments():
         help='Number of categories upon which we globally condition.')
     parser.add_argument(
         '--lc_channels',
-        type=int,
+        type=bool,
         default=None,
         help='Number of local condition embedding channels. Omit if no '
              'local conditioning.')
@@ -134,9 +134,8 @@ def get_arguments():
 
     if arguments.lc_channels is not None:
         if arguments.lc_cardinality is None:
-            raise ValueError("Globally conditioning but lc_cardinality not "
-                             "specified. Use --lc_cardinality=377 for full "
-                             "VCTK corpus.")
+            raise ValueError("Locally conditioning but lc_cardinality not "
+                             "specified." )
 
         #if arguments.lc_id is None:
         #    raise ValueError("Locally conditioning, but local condition was "
@@ -178,6 +177,7 @@ def read_sample_label(labelsFileName):
 
 def main():
     args = get_arguments()
+    args.lc_channels = args.lc_cardinality*3
     started_datestring = "{0:%Y-%m-%dT%H-%M-%S}".format(datetime.now())
     logdir = os.path.join(args.logdir, 'generate', started_datestring)
     with open(args.wavenet_params, 'r') as config_file:

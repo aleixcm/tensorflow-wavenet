@@ -155,21 +155,28 @@ def get_labels(filename):
     # Convert to log scale (dB). We'll use the peak power (max) as reference.
     log_S = librosa.power_to_db(S, ref=np.max)
     # Find max
-    n_mel = []
+    labels = []
+    labelsNorm = []
     for i in range(len(log_S[0])):
         col = log_S[:, i]
-        max_ind = np.argmax(col)
-        n_mel = np.append(n_mel, max_ind)
+        ampIndex = np.argmax(col)
+        labels = np.append(labels, ampIndex)
+        labelsUniq = np.unique(labels)
+        labelsIndices = []
 
-    # Get Labels
-    labels = np.empty(n_mel.size)
-    for i, item in enumerate(n_mel):
-        if item <= 28:
-            labels[i] = 0
-        elif item > 28 and item <= 45:
-            labels[i] = 1
-        else:
-            labels[i] = 2
+    for index, labelsEnum in enumerate(labelsUniq):
+        labelsIndices = np.append(labelsIndices, index)
+
+    for item in labels:
+        for i in range(len(labelsUniq)):
+            if item==labelsUniq[i]:
+                labelNorm=labelsIndices[i]
+                labelsNorm = np.append(labelsNorm, labelNorm)
+
+    labels = labelsNorm
+    # Upsampling: Nearest Neighbour Interpolation?
+    padding = int(len(y)/len(labels)/2)
+    upLabels = []
 
     # Upsampling: Nearest Neighbour Interpolation?
     padding = int(len(y) / len(labels) / 2)
@@ -340,13 +347,13 @@ class AudioReader(object):
             self.gc_queue = tf.PaddingFIFOQueue(queue_size, ['int32'],
                                                 shapes=[()])
             self.gc_enqueue = self.gc_queue.enqueue([self.id_placeholder])
-
+        '''
         if self.lc_channels:
             self.id_placeholder_lc = tf.placeholder(dtype=tf.float32, shape=(None, self.lc_channels))
             self.lc_queue = tf.PaddingFIFOQueue(queue_size, ['float32'],
                                                 shapes=[(None, self.lc_channels)])
             self.lc_enqueue = self.lc_queue.enqueue([self.id_placeholder_lc])
-
+        '''
         # TODO Find a better way to check this.
         # Checking inside the AudioReader's thread makes it hard to terminate
         # the execution of the script, so we do it in the constructor for now.
@@ -356,9 +363,10 @@ class AudioReader(object):
         if self.gc_enabled and not_all_have_id(files):
             raise ValueError("Global conditioning is enabled, but file names "
                              "do not conform to pattern having id.")
-        if self.lc_channels and not_all_have_id(files):
-            raise ValueError("Local conditioning is enabled, but file names "
-                             "do not conform to pattern having id.")
+        # Not needed
+        #if self.lc_channels and not_all_have_id(files):
+            #raise ValueError("Local conditioning is enabled, but file names "
+                             #"do not conform to pattern having id.")
         # Determine the number of mutually-exclusive categories we will
         # accomodate in our embedding table.
         if self.gc_enabled:
@@ -388,8 +396,19 @@ class AudioReader(object):
             self.lc_category_cardinality += 1
             print("Detected --lc_cardinality={}".format(
                   self.lc_category_cardinality))
+            # Calculate lc_channels needed
+            self.lc_channels = self.lc_category_cardinality * 3
+            print("Created --lc_channels={}".format(
+                self.lc_channels))
+
         else:
             self.lc_category_cardinality = None
+
+        if self.lc_channels:
+            self.id_placeholder_lc = tf.placeholder(dtype=tf.float32, shape=(None, self.lc_channels))
+            self.lc_queue = tf.PaddingFIFOQueue(queue_size, ['float32'],
+                                                shapes=[(None, self.lc_channels)])
+            self.lc_enqueue = self.lc_queue.enqueue([self.id_placeholder_lc])
 
     def dequeue(self, num_elements):
         output = self.queue.dequeue_many(num_elements)
@@ -427,7 +446,7 @@ class AudioReader(object):
                     # Adding 0 padding of receptive field size at the beggining. Because of causal convolution
                     category_id_local = np.pad(category_id_local, [[self.receptive_field, 0], [0, 0]],
                                    'constant')
-                    # Convert to oneHot. Cannot be a tensor, so use numpy instead
+
                     # Add previous, current, next
                     for i in range(len(category_id_local)):
                         if i == 0:
@@ -444,9 +463,10 @@ class AudioReader(object):
                     category_id_local_prev = category_id_local_prev.reshape(1,-1)
                     category_id_local_next = category_id_local_next.reshape(1, -1)
 
-                    category_id_local = np.eye(int(self.lc_channels / 3))[category_id_local][0]
-                    category_id_local_prev = np.eye(int(self.lc_channels / 3))[category_id_local_prev][0]
-                    category_id_local_next = np.eye(int(self.lc_channels / 3))[category_id_local_next][0]
+                    # Convert to oneHot. Cannot be a tensor, so use numpy instead
+                    category_id_local = np.eye(int(self.lc_category_cardinality))[category_id_local][0]
+                    category_id_local_prev = np.eye(int(self.lc_category_cardinality))[category_id_local_prev][0]
+                    category_id_local_next = np.eye(int(self.lc_category_cardinality))[category_id_local_next][0]
 
                     category_id_local = np.append(category_id_local_prev, category_id_local, axis=1)
                     category_id_local = np.append(category_id_local, category_id_local_next, axis=1)

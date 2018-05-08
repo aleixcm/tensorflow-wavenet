@@ -104,8 +104,10 @@ def get_arguments():
                         help='Whether to store histogram summaries. Default: False')
     parser.add_argument('--gc_channels', type=int, default=None,
                         help='Number of global condition channels. Default: None. Expecting: Int')
-    parser.add_argument('--lc_channels', type=int, default=None,
+    parser.add_argument('--lc_channels', type=bool, default=None,
                         help='Number of local condition channels. Default: None. Expecting: Int')
+    # Number of local channels are calculated automatically. However has to be passed as a parameter
+    # --lc_channels = True
     parser.add_argument('--max_checkpoints', type=int, default=MAX_TO_KEEP,
                         help='Maximum amount of checkpoints that will be kept alive. Default: '
                              + str(MAX_TO_KEEP) + '.')
@@ -259,7 +261,7 @@ def main():
         histograms=args.histograms,
         global_condition_channels=args.gc_channels,
         global_condition_cardinality=reader.gc_category_cardinality,
-        local_condition_channels = args.lc_channels,
+        local_condition_channels = reader.lc_channels,
         local_condition_cardinality = reader.lc_category_cardinality)
 
     if args.l2_regularization_strength == 0:
