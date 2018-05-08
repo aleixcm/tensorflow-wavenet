@@ -1,0 +1,7 @@
+Dilations: 1, 2, 4, 1, 2, 4, 
+Receptive Field: 16
+Steps: 2999
+Loss Value: 2.4738147
+Training time: 11470.676565647125 sec
+Quantization channels: 128
+lc_channels: 9
