@@ -5,6 +5,8 @@ import librosa.display
 from sklearn import preprocessing
 import scipy.io.wavfile as wavfile
 import os
+import codecs
+import json
 
 #np.set_printoptions(threshold=np.nan)
 y, sr = librosa.load('corpus/panFluteBigDataset/lc_train0.wav', sr=16000)
@@ -29,16 +31,38 @@ def Upsampling(labels):
     return upLabels
 
 def genFile(upLabels12):
+    '''
+    a = np.arange(10).reshape(2, 5)  # a 2 by 5 array
+    b = a.tolist()  # nested lists with same data, indices
+    file_path = "/path.json"  ## your path variable
+    json.dump(b, codecs.open(file_path, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
+    '''
 
-    file00 = open(os.path.join('corpus', 'Analysis', 'mfcc.txt'), 'w')
+    upLabelsJSON = upLabels12.tolist()
+    file_path = os.path.join('corpus', 'Analysis', 'mfcc.json')
+    json.dump(upLabelsJSON, codecs.open(file_path, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True,
+              indent=4)
+    return (file_path)
+
+'''
+    file00 = open(os.path.join('corpus', 'Analysis', 'mfcc.json'), 'w')
     for i in range(upLabels12.shape[0]):
         for item in (upLabels12[i][:]):
             file00.write('%f,' % item)
         file00.write(';')
     file00.close()
     return file00.name
+'''
+
 
 def readFile(fileName):
+    file_path = os.path.join('corpus', 'Analysis', 'mfcc.json')
+    obj_text = codecs.open(file_path, 'r', encoding='utf-8').read()
+    upLabelsJSONnew = json.loads(obj_text)
+    upLabelsNew = np.array(upLabelsJSONnew)
+    return(upLabelsNew)
+
+    '''
     with open(fileName, 'r') as myfile:
         readLabels = myfile.read()
         #convert into 12 channels again
@@ -49,6 +73,7 @@ def readFile(fileName):
             row = np.fromstring(readLabels2[i], dtype=float, sep=',').reshape(-1, 1)  # np.array
             matrix = np.hstack((matrix, row))
     return(matrix)
+    '''
 
 def main():
     mfccs=calculateMFCC(y,sr)
@@ -57,9 +82,9 @@ def main():
         upLabels=Upsampling(mfccs[i][:])
         upLabels12 = np.vstack((upLabels12, upLabels))
 
-    filename=genFile(upLabels12)
-    readLabels = readFile(filename)
-    print('a')
+    fileName=genFile(upLabels12)
+    upLabelsNew = readFile(fileName)
+    prin('a')
 
     '''
     plt.figure()
