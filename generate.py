@@ -12,6 +12,10 @@ import tensorflow as tf
 
 import time
 
+from sklearn import preprocessing
+import codecs
+import json
+
 from wavenet import WaveNetModel, mu_law_decode, mu_law_encode, audio_reader
 
 SAMPLES = 16000
@@ -132,10 +136,10 @@ def get_arguments():
                               "not specified. Use --gc_id to specify global "
                               "condition.")
 
-    if arguments.lc_channels is not None:
-        if arguments.lc_cardinality is None:
-            raise ValueError("Locally conditioning but lc_cardinality not "
-                             "specified." )
+    #if arguments.lc_channels is not None:
+        #if arguments.lc_cardinality is None:
+            #raise ValueError("Locally conditioning but lc_cardinality not "
+                             #"specified." )
 
         #if arguments.lc_id is None:
         #    raise ValueError("Locally conditioning, but local condition was "
@@ -168,16 +172,17 @@ def create_seed(filename,
 
 #aleix
 def read_sample_label(labelsFileName):
-    with open(labelsFileName, 'r') as myfile:
-        labels_sample = myfile.read().replace('\n', '')
-
-    return(labels_sample)
+    obj_text = codecs.open(labelsFileName, 'r', encoding='utf-8').read()
+    upLabelsJSONnew = json.loads(obj_text)
+    upLabelsNew = np.array(upLabelsJSONnew)
+    upLabelsNew = np.transpose(upLabelsNew)
+    return (upLabelsNew)
 #aleix
 
 
 def main():
     args = get_arguments()
-    args.lc_channels = args.lc_cardinality*3
+    args.lc_channels = 12
     started_datestring = "{0:%Y-%m-%dT%H-%M-%S}".format(datetime.now())
     logdir = os.path.join(args.logdir, 'generate', started_datestring)
     with open(args.wavenet_params, 'r') as config_file:
@@ -267,34 +272,6 @@ def main():
     if args.labels is not None:
         labelsFileName = (args.labels)
         sample_labels_list = read_sample_label(labelsFileName)
-        sample_labels_list = np.fromstring(sample_labels_list, dtype=int, sep=',').reshape(-1, 1)
-
-        # Convert to oneHot. Cannot be a tensor, so use numpy instead
-        # Add previous, current, next
-        for i in range(len(sample_labels_list)):
-            if i == 0:
-                sample_labels_list_prev = np.array([0])
-                sample_labels_list_next = np.array(sample_labels_list[i + 1])
-            elif i == len(sample_labels_list) - 1:
-                sample_labels_list_prev = np.append(sample_labels_list_prev, sample_labels_list[i - 1])
-                sample_labels_list_next = np.append(sample_labels_list_next, sample_labels_list[i])
-            else:
-                sample_labels_list_prev = np.append(sample_labels_list_prev, sample_labels_list[i - 1])
-                sample_labels_list_next = np.append(sample_labels_list_next, sample_labels_list[i + 1])
-
-        sample_labels_list = sample_labels_list.reshape(1, -1)
-        sample_labels_list_prev = sample_labels_list_prev.reshape(1, -1)
-        sample_labels_list_next = sample_labels_list_next.reshape(1, -1)
-
-        sample_labels_list = np.eye(int(args.lc_channels / 3))[sample_labels_list][0]
-        sample_labels_list_prev = np.eye(int(args.lc_channels / 3))[sample_labels_list_prev][0]
-        sample_labels_list_next = np.eye(int(args.lc_channels / 3))[sample_labels_list_next][0]
-
-        sample_labels_list = np.append(sample_labels_list_prev, sample_labels_list, axis=1)
-        sample_labels_list = np.append(sample_labels_list, sample_labels_list_next, axis=1)
-
-        #sample_labels_list =sample_labels_list.reshape(1, -1)
-        #sample_labels_list = np.eye(args.lc_channels)[sample_labels_list][0]
     else:
         sample_labels_list = None
 

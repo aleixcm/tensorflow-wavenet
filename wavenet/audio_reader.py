@@ -8,6 +8,10 @@ import librosa
 import numpy as np
 import tensorflow as tf
 
+from sklearn import preprocessing
+import codecs
+import json
+
 #FILE_PATTERN = r'p([0-9]+)_([0-9]+)\.wav'          #VCTK Corpus
 #FILE_PATTERN = r'sinus([0-9])\.wav'                #scale
 #FILE_PATTERN = r'([0-9]+)cat([0-9]+)\.wav'         #shape
@@ -146,58 +150,57 @@ def get_category_cardinality(files):
 
 #aleix
 '''
-#aleix
-#Perform Mel Spectogram to get labels
-def get_labels(filename):
-    y, sr = librosa.load(filename, sr=16000)
-    # mel-scaled power (energy-squared) spectrogram
-    S = librosa.feature.melspectrogram(y, sr=sr, n_mels=128)
-    # Convert to log scale (dB). We'll use the peak power (max) as reference.
-    log_S = librosa.power_to_db(S, ref=np.max)
-    # Find max
-    labels = []
-    labelsNorm = []
-    for i in range(len(log_S[0])):
-        col = log_S[:, i]
-        ampIndex = np.argmax(col)
-        labels = np.append(labels, ampIndex)
-        labelsUniq = np.unique(labels)
-        labelsIndices = []
+#Calculate MFCC. Called by get_labels
+def calculateMFCC(y,sr):
+    mfccs = librosa.feature.mfcc(y, sr=sr)
+    mfccs = preprocessing.scale(mfccs, axis=1)
+    return(mfccs)
 
-    for index, labelsEnum in enumerate(labelsUniq):
-        labelsIndices = np.append(labelsIndices, index)
-
-    for item in labels:
-        for i in range(len(labelsUniq)):
-            if item==labelsUniq[i]:
-                labelNorm=labelsIndices[i]
-                labelsNorm = np.append(labelsNorm, labelNorm)
-
-    labels = labelsNorm
-    # Upsampling: Nearest Neighbour Interpolation?
+#Upsampling after MFCC. Called by get_labels
+def Upsampling(labels, y):
     padding = int(len(y)/len(labels)/2)
     upLabels = []
-
-    # Upsampling: Nearest Neighbour Interpolation?
-    padding = int(len(y) / len(labels) / 2)
-    upLabels = []
     for i, item in enumerate(labels):
-        padLabel = np.pad([int(labels[i])], (padding, padding - 1), 'constant', constant_values=item)
+        padLabel = np.pad([labels[i]], (padding, padding-1), 'constant', constant_values=item)
         upLabels = np.append(upLabels, padLabel)
     # Fix lenghts
     if len(upLabels) > len(y):
         upLabels = upLabels[:len(y)]
     elif len(upLabels) < len(y):
-        diff = len(y) - len(upLabels)
-        upLabels = np.pad(upLabels, (0, diff), 'constant', constant_values=upLabels[len(upLabels) - 1])
+        diff = len(y)-len(upLabels)
+        upLabels = np.pad(upLabels, (0, diff), 'constant', constant_values=upLabels[len(upLabels)-1])
+    return upLabels
 
-    #Write upLabels to a .txt file
+#Generate a JSON File. Called by get_labels
+def genFile(upLabels12, fileNameJSON):
+    '''
+    a = np.arange(10).reshape(2, 5)  # a 2 by 5 array
+    b = a.tolist()  # nested lists with same data, indices
+    file_path = "/path.json"  ## your path variable
+    json.dump(b, codecs.open(file_path, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
+    '''
+
+    upLabelsJSON = upLabels12.tolist()
+    #file_path = os.path.join('corpus', 'Analysis', 'mfcc.json')
+    json.dump(upLabelsJSON, codecs.open(fileNameJSON, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True,
+              indent=4)
+
+#aleix
+#Get labels
+def get_labels(filename):
+    y, sr = librosa.load(filename, sr=16000)
+    mfccs = calculateMFCC(y, sr)
+    upLabels12 = Upsampling(mfccs[1][:],y)
+    for i in range(2, 13):
+        upLabels = Upsampling(mfccs[i][:],y)
+        upLabels12 = np.vstack((upLabels12, upLabels))
+
+    #Create JSON Name
     base = os.path.splitext(filename)[0]
-    filenametxt = base+'.txt'
-    file00 = open(filenametxt, 'w')
-    for item in upLabels:
-        file00.write('%i,\n' % item)
-    file00.close()
+    fileNameJSON = base + '.json'
+
+    genFile(upLabels12, fileNameJSON)
+
 
 #for localTrainBigDataset
 def get_category_cardinality(files):
@@ -217,21 +220,8 @@ def get_category_cardinality(files):
             max_id = id
         #create labelsFileName
         get_labels(filename)
-        #Check that labels file exist and get cardinality
-        labelsFileName = re.sub('\.wav$', '', filename)+'.txt'
-        if os.path.isfile(labelsFileName) is not None:
-            labels = read_category_id_local(labelsFileName) #str
-            labels = np.fromstring(labels, dtype=int, sep=',')
-            id_local = np.unique(labels)
-            for i in range(len(id_local)):
-                if min_id_local is None or id_local[i] < min_id_local:
-                    min_id_local = id_local[i]
-                if max_id_local is None or id_local[i] > max_id_local:
-                    max_id_local = id_local[i]
-        else:
-            id_local = None
 
-    return min_id, max_id, min_id_local, max_id_local
+    return min_id, max_id
 
 #aleix
 
@@ -251,9 +241,10 @@ def find_files(directory, pattern='*.wav'):
 
 #aleix
 def read_category_id_local(labelsFileName):
-    with open(labelsFileName, 'r') as myfile:
-        category_id_local = myfile.read().replace('\n', '')
-    return(category_id_local)
+    obj_text = codecs.open(labelsFileName, 'r', encoding='utf-8').read()
+    upLabelsJSONnew = json.loads(obj_text)
+    upLabelsNew = np.array(upLabelsJSONnew)
+    return (upLabelsNew)
 #aleix
 
 
@@ -265,10 +256,10 @@ def load_generic_audio(directory, sample_rate):
     randomized_files = randomize_files(files)
     for filename in randomized_files:
         ids = id_reg_exp.findall(filename)
-        labelsFileName = re.sub('\.wav$', '', filename)+'.txt'
+        labelsFileName = re.sub('\.wav$', '', filename)+'.json'
         if os.path.isfile(labelsFileName):
             labels = read_category_id_local(labelsFileName) #str
-            category_id_local = np.fromstring(labels, dtype=int, sep=',').reshape(-1, 1) #np.array
+            category_id_local = np.transpose(labels)
         else:
             category_id_local = None
 
@@ -370,7 +361,7 @@ class AudioReader(object):
         # Determine the number of mutually-exclusive categories we will
         # accomodate in our embedding table.
         if self.gc_enabled:
-            _, self.gc_category_cardinality, _, _ = get_category_cardinality(files)
+            _, self.gc_category_cardinality = get_category_cardinality(files)
             # Add one to the largest index to get the number of categories,
             # since tf.nn.embedding_lookup expects zero-indexing. This
             # means one or more at the bottom correspond to unused entries
@@ -385,7 +376,7 @@ class AudioReader(object):
             self.gc_category_cardinality = None
 
         if self.lc_channels:
-            _, _, _, self.lc_category_cardinality = get_category_cardinality(files)
+            _, _ = get_category_cardinality(files)
             # Add one to the largest index to get the number of categories,
             # since tf.nn.embedding_lookup expects zero-indexing. This
             # means one or more at the bottom correspond to unused entries
@@ -393,11 +384,11 @@ class AudioReader(object):
             # to keep the code simpler, and preserves correspondance between
             # the id one specifies when generating, and the ids in the
             # file names.
-            self.lc_category_cardinality += 1
-            print("Detected --lc_cardinality={}".format(
-                  self.lc_category_cardinality))
+            self.lc_category_cardinality = True
+            #print("Detected --lc_cardinality={}".format(
+            #      self.lc_category_cardinality))
             # Calculate lc_channels needed
-            self.lc_channels = self.lc_category_cardinality * 3
+            self.lc_channels = 12
             print("Created --lc_channels={}".format(
                 self.lc_channels))
 
@@ -446,30 +437,6 @@ class AudioReader(object):
                     # Adding 0 padding of receptive field size at the beggining. Because of causal convolution
                     category_id_local = np.pad(category_id_local, [[self.receptive_field, 0], [0, 0]],
                                    'constant')
-
-                    # Add previous, current, next
-                    for i in range(len(category_id_local)):
-                        if i == 0:
-                            category_id_local_prev=np.array([0])
-                            category_id_local_next=np.array(category_id_local[i+1])
-                        elif i == len(category_id_local)-1:
-                            category_id_local_prev = np.append(category_id_local_prev, category_id_local[i-1])
-                            category_id_local_next = np.append(category_id_local_next, category_id_local[i])
-                        else:
-                            category_id_local_prev = np.append(category_id_local_prev, category_id_local[i-1])
-                            category_id_local_next = np.append(category_id_local_next, category_id_local[i+1])
-
-                    category_id_local = category_id_local.reshape(1, -1)
-                    category_id_local_prev = category_id_local_prev.reshape(1,-1)
-                    category_id_local_next = category_id_local_next.reshape(1, -1)
-
-                    # Convert to oneHot. Cannot be a tensor, so use numpy instead
-                    category_id_local = np.eye(int(self.lc_category_cardinality))[category_id_local][0]
-                    category_id_local_prev = np.eye(int(self.lc_category_cardinality))[category_id_local_prev][0]
-                    category_id_local_next = np.eye(int(self.lc_category_cardinality))[category_id_local_next][0]
-
-                    category_id_local = np.append(category_id_local_prev, category_id_local, axis=1)
-                    category_id_local = np.append(category_id_local, category_id_local_next, axis=1)
 
                 if self.sample_size:
                     # Cut samples into pieces of size receptive_field +

@@ -261,8 +261,8 @@ def main():
         histograms=args.histograms,
         global_condition_channels=args.gc_channels,
         global_condition_cardinality=reader.gc_category_cardinality,
-        local_condition_channels = reader.lc_channels,
-        local_condition_cardinality = reader.lc_category_cardinality)
+        local_condition_channels=reader.lc_channels,
+        local_condition_cardinality=reader.lc_category_cardinality)
 
     if args.l2_regularization_strength == 0:
         args.l2_regularization_strength = None
