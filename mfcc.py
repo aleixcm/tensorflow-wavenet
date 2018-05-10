@@ -9,7 +9,7 @@ import codecs
 import json
 
 #np.set_printoptions(threshold=np.nan)
-y, sr = librosa.load('corpus/panFluteBigDataset/lc_train0.wav', sr=16000)
+y, sr = librosa.load('corpus/Analysis/lc_scale_flute.wav', sr=16000)
 
 def calculateMFCC(y,sr):
     mfccs = librosa.feature.mfcc(y, sr=sr)
@@ -39,7 +39,7 @@ def genFile(upLabels12):
     '''
 
     upLabelsJSON = upLabels12.tolist()
-    file_path = os.path.join('corpus', 'Analysis', 'mfcc.json')
+    file_path = os.path.join('corpus', 'Analysis', 'lc_scale_flute.json')
     json.dump(upLabelsJSON, codecs.open(file_path, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True,
               indent=4)
     return (file_path)
@@ -83,8 +83,8 @@ def main():
         upLabels12 = np.vstack((upLabels12, upLabels))
 
     fileName=genFile(upLabels12)
-    upLabelsNew = readFile(fileName)
-    prin('a')
+    #upLabelsNew = readFile(fileName)
+    #print('a')
 
     '''
     plt.figure()

@@ -4,7 +4,7 @@ from sklearn import preprocessing
 
 
 #np.set_printoptions(threshold=np.nan)
-y, sr = librosa.load('corpus/localTlc_train4.wav', sr=16000)
+y, sr = librosa.load('corpus/localTrainBigDataset_noAmp2/lc_train4.wav', sr=16000)
 
 def calculateMFCC(y,sr):
     mfccs = librosa.feature.mfcc(y, sr=sr)
@@ -15,12 +15,6 @@ def calculateMFCC(y,sr):
 def main():
     mfccs=calculateMFCC(y,sr)
 
-    plt.figure()
-    for i in range(0,12):
-
-        plt.plot(upLabels12[i][:])
-
-    plt.show()
     #plots
     plt.figure(figsize=(12, 4))
     librosa.display.specshow(mfccs, sr=sr, x_axis='time', y_axis='mel')
@@ -28,6 +22,7 @@ def main():
     plt.title('MFCCs')
     plt.colorbar(format='%+02.0f dB')
     plt.tight_layout()
+    plt.show()
 
 if __name__ == '__main__':
     main()
