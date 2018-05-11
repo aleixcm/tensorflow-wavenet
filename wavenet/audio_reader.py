@@ -148,56 +148,83 @@ def get_category_cardinality(files):
 '''
 #aleix
 #Perform Mel Spectogram to get labels
-def get_labels(filename):
-    y, sr = librosa.load(filename, sr=16000)
-    # mel-scaled power (energy-squared) spectrogram
-    S = librosa.feature.melspectrogram(y, sr=sr, n_mels=128)
-    # Convert to log scale (dB). We'll use the peak power (max) as reference.
-    log_S = librosa.power_to_db(S, ref=np.max)
-    # Find max
-    labels = []
-    labelsNorm = []
-    for i in range(len(log_S[0])):
-        col = log_S[:, i]
-        ampIndex = np.argmax(col)
-        labels = np.append(labels, ampIndex)
-        labelsUniq = np.unique(labels)
-        labelsIndices = []
+def get_labels(self, files):
+    for filename in files:
+        y, sr = librosa.load(filename, sr=16000)
+        # mel-scaled power (energy-squared) spectrogram
+        S = librosa.feature.melspectrogram(y, sr=sr, n_mels=128)
+        # Convert to log scale (dB). We'll use the peak power (max) as reference.
+        log_S = librosa.power_to_db(S, ref=np.max)
+        # Find max
+        labels = []
+        labelsNorm = []
+        for i in range(len(log_S[0])):
+            col = log_S[:, i]
+            ampIndex = np.argmax(col)
+            labels = np.append(labels, ampIndex)
 
-    for index, labelsEnum in enumerate(labelsUniq):
-        labelsIndices = np.append(labelsIndices, index)
+        for item in labels:
+            for i in range(len(self.labelsUniq)):
+                if item==self.labelsUniq[i]:
+                    labelNorm=self.labelsUniqNorm[i]
+                    labelsNorm = np.append(labelsNorm, labelNorm)
 
-    for item in labels:
-        for i in range(len(labelsUniq)):
-            if item==labelsUniq[i]:
-                labelNorm=labelsIndices[i]
-                labelsNorm = np.append(labelsNorm, labelNorm)
+        labels = labelsNorm
+        # Upsampling: Nearest Neighbour Interpolation?
+        padding = int(len(y)/len(labels)/2)
+        upLabels = []
 
-    labels = labelsNorm
-    # Upsampling: Nearest Neighbour Interpolation?
-    padding = int(len(y)/len(labels)/2)
-    upLabels = []
+        # Upsampling: Nearest Neighbour Interpolation?
+        padding = int(len(y) / len(labels) / 2)
+        upLabels = []
+        for i, item in enumerate(labels):
+            padLabel = np.pad([int(labels[i])], (padding, padding - 1), 'constant', constant_values=item)
+            upLabels = np.append(upLabels, padLabel)
+        # Fix lenghts
+        if len(upLabels) > len(y):
+            upLabels = upLabels[:len(y)]
+        elif len(upLabels) < len(y):
+            diff = len(y) - len(upLabels)
+            upLabels = np.pad(upLabels, (0, diff), 'constant', constant_values=upLabels[len(upLabels) - 1])
 
-    # Upsampling: Nearest Neighbour Interpolation?
-    padding = int(len(y) / len(labels) / 2)
-    upLabels = []
-    for i, item in enumerate(labels):
-        padLabel = np.pad([int(labels[i])], (padding, padding - 1), 'constant', constant_values=item)
-        upLabels = np.append(upLabels, padLabel)
-    # Fix lenghts
-    if len(upLabels) > len(y):
-        upLabels = upLabels[:len(y)]
-    elif len(upLabels) < len(y):
-        diff = len(y) - len(upLabels)
-        upLabels = np.pad(upLabels, (0, diff), 'constant', constant_values=upLabels[len(upLabels) - 1])
+        #Write upLabels to a .txt file
+        base = os.path.splitext(filename)[0]
+        filenametxt = base+'.txt'
+        file00 = open(filenametxt, 'w')
+        for item in upLabels:
+            file00.write('%i,\n' % item)
+        file00.close()
 
-    #Write upLabels to a .txt file
-    base = os.path.splitext(filename)[0]
-    filenametxt = base+'.txt'
-    file00 = open(filenametxt, 'w')
-    for item in upLabels:
-        file00.write('%i,\n' % item)
-    file00.close()
+# We need to know all the categories before creating the .txt files
+def getLabelsUniq(files):
+    labelsUniqAll = []
+    labelsUniqAllNorm = []
+    for filename in files:
+        y, sr = librosa.load(filename, sr=16000)
+        # mel-scaled power (energy-squared) spectrogram
+        S = librosa.feature.melspectrogram(y, sr=sr, n_mels=128)
+        # Convert to log scale (dB). We'll use the peak power (max) as reference.
+        log_S = librosa.power_to_db(S, ref=np.max)
+        # Find max
+        labels = []
+        labelsNorm = []
+        for i in range(len(log_S[0])):
+            col = log_S[:, i]
+            ampIndex = np.argmax(col)
+            labels = np.append(labels, ampIndex)
+            labelsUniq = np.unique(labels)
+
+        #check if we have more labels and add to the object attribute
+        for item in labelsUniq:
+            if item not in labelsUniqAll:
+                labelsUniqAll= np.append(labelsUniqAll, item)
+                labelsUniqAll = np.unique(labelsUniqAll) #sorting
+
+    #get indices
+    for index, labelsEnum in enumerate(labelsUniqAll):
+        labelsUniqAllNorm = np.append(labelsUniqAllNorm, index)
+
+    return(labelsUniqAll, labelsUniqAllNorm)
 
 #for localTrainBigDataset
 def get_category_cardinality(files):
@@ -385,7 +412,14 @@ class AudioReader(object):
             self.gc_category_cardinality = None
 
         if self.lc_channels:
-            _, _, _, self.lc_category_cardinality = get_category_cardinality(files)
+            # Get number of labels to create
+            self.labelsUniq, self.labelsUniqNorm = getLabelsUniq(files)
+            # Get cardinality
+            self.lc_category_cardinality = len(self.labelsUniq)
+            # Create .txt files
+            get_labels(self, files)
+
+            #_, _, _, self.lc_category_cardinality = get_category_cardinality(files)
             # Add one to the largest index to get the number of categories,
             # since tf.nn.embedding_lookup expects zero-indexing. This
             # means one or more at the bottom correspond to unused entries
@@ -393,7 +427,7 @@ class AudioReader(object):
             # to keep the code simpler, and preserves correspondance between
             # the id one specifies when generating, and the ids in the
             # file names.
-            self.lc_category_cardinality += 1
+            #self.lc_category_cardinality += 1
             print("Detected --lc_cardinality={}".format(
                   self.lc_category_cardinality))
             # Calculate lc_channels needed
