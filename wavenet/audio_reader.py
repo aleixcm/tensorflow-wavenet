@@ -163,9 +163,10 @@ def get_labels(self, files):
             ampIndex = np.argmax(col)
             labels = np.append(labels, ampIndex)
 
+        # fix errors (-3,+3)
         for item in labels:
             for i in range(len(self.labelsUniq)):
-                if item==self.labelsUniq[i]:
+                if item == self.labelsUniq[i] or (item >= self.labelsUniq[i]-3 and item <= self.labelsUniq[i]+3 ):
                     labelNorm=self.labelsUniqNorm[i]
                     labelsNorm = np.append(labelsNorm, labelNorm)
 
@@ -220,6 +221,14 @@ def getLabelsUniq(files):
                 labelsUniqAll= np.append(labelsUniqAll, item)
                 labelsUniqAll = np.unique(labelsUniqAll) #sorting
 
+    #fix errors (-3,+3)
+    for i in range(len(labelsUniqAll)):
+        if i != 0:
+            if labelsUniqAll[i] >= labelsUniqAll[i-1]-3 and labelsUniqAll[i] <= labelsUniqAll[i-1]+3:
+                #remove from labelsUniqAll
+                labelsUniqAll[i] = labelsUniqAll[i-1]
+
+    labelsUniqAll = np.unique(labelsUniqAll)
     #get indices
     for index, labelsEnum in enumerate(labelsUniqAll):
         labelsUniqAllNorm = np.append(labelsUniqAllNorm, index)
