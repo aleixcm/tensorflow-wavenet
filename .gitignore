@@ -1,4 +1,9 @@
 logdir/
 VCTK-Corpus/
 *.pyc
+corpus/.DS_Store
+corpus/.DS_Store
+corpus/localTrain/.DS_Store
+corpus/panFluteBigDataset/.DS_Store
+wavenet/.DS_Store
 
