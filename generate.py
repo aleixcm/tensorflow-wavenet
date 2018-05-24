@@ -177,7 +177,8 @@ def read_sample_label(labelsFileName):
 
 def main():
     args = get_arguments()
-    args.lc_channels = args.lc_cardinality*3
+    if args.lc_channels is not None:
+    	args.lc_channels = args.lc_cardinality*3
     started_datestring = "{0:%Y-%m-%dT%H-%M-%S}".format(datetime.now())
     logdir = os.path.join(args.logdir, 'generate', started_datestring)
     with open(args.wavenet_params, 'r') as config_file:
