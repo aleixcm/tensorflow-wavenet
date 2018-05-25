@@ -330,12 +330,11 @@ def main():
                 with open(timeline_path, 'w') as f:
                     f.write(tl.generate_chrome_trace_format(show_memory=True))
             else:
-                summary, loss_value, _ = \
-                    sess.run([summaries, loss, optim])
+                summary, loss_value, _ = sess.run([summaries, loss, optim])
                 writer.add_summary(summary, step)
 
-                #print('input_batch')
-                #print(input_batch0)
+                #print('conv_filter2')
+                #print(conv_filter2_value.shape)
                 #print(input_batch0.shape)
                 #print(global_condition_batch0)
                 #print(global_condition_batch0.shape)
@@ -416,6 +415,24 @@ def main():
         file01.close()
         print('durations.txt saved')
         print()
+
+        file02 = open(os.path.join(directory, 'info.txt'), 'w')
+        file02.write('Dilations: ')
+        for item in wavenet_params["dilations"]:
+            file02.write('%s, ' % item)
+
+        file02.write('\nReceptive Field: %s\n' % reader.receptive_field)
+        file02.write('Steps: %s\n' % step)
+        file02.write('Loss Value: %s\n' % loss_value)
+        file02.write('Training time: %s sec\n' % sum(duration_saved))
+        file02.write('Quantization channels: %s\n' % wavenet_params["quantization_channels"])
+        file02.write('lc_channels: %s\n' % args.lc_channels)
+        file02.close()
+
+        print('info.txt saved')
+
+        print()
+
         #plt.show()
 
         # Introduce a line break after ^C is displayed so save message
