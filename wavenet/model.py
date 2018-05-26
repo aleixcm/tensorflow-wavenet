@@ -337,6 +337,10 @@ class WaveNetModel(object):
         conv_filter = causal_conv(input_batch, weights_filter, dilation)
         conv_gate = causal_conv(input_batch, weights_gate, dilation)
 
+        # after causal_conv the input is reduced by out_width = tf.shape(value)[1] - (filter_width - 1) * dilation
+        # local_condition_batch needs to have same size than conv_filter and conv_gate
+        # local_condition_batch = tf.slice(local_condition_batch, [0, self.receptive_field, 0], [-1, -1, -1])
+
         if global_condition_batch is not None:
             weights_gc_filter = variables['gc_filtweights']
             conv_filter = conv_filter + tf.nn.conv1d(global_condition_batch,
@@ -353,32 +357,28 @@ class WaveNetModel(object):
 
         if local_condition_batch is not None:
             weights_lc_filter = variables['lc_filtweights']
-            # Here I modify local_condition_batch in order to get more channels
-            #local_condition_batch = tf.one_hot(tf.cast(local_condition_batch, tf.int32), self.local_condition_channels)
-            #print(local_condition_batch)
-            lc_filter_output = tf.nn.conv1d(local_condition_batch,
-                                            weights_lc_filter,
-                                            stride=1,
-                                            padding="SAME",
-                                            name="lc_filter_conv")
+            conv_filter0 = tf.nn.conv1d(local_condition_batch,
+                                        weights_lc_filter,
+                                        stride=1,
+                                        padding="SAME",
+                                        name="lc_filter")
 
-            conv_filter = conv_filter + tf.slice(
-                lc_filter_output,
-                [0, tf.shape(lc_filter_output)[1] - tf.shape(conv_filter)[1], 0],
-                [-1, -1, -1]
-            )
+            # conv_filter0 need to be reshaped cause Conv_filter is reduced in causalconv
+            conv_filter_slice = tf.shape(conv_filter0)[1] - tf.shape(conv_filter)[1]  # position to start
+            conv_filter0 = tf.slice(conv_filter0, [0, conv_filter_slice, 0], [-1, -1, -1])
+            conv_filter = conv_filter + conv_filter0
 
             weights_lc_gate = variables['lc_gateweights']
-            lc_gate_output = tf.nn.conv1d(local_condition_batch,
-                                          weights_lc_gate,
-                                          stride=1,
-                                          padding="SAME",
-                                          name="lc_gate_conv")
-            conv_gate = conv_gate + tf.slice(
-                lc_gate_output,
-                [0, tf.shape(lc_gate_output)[1] - tf.shape(conv_gate)[1], 0],
-                [-1, -1, -1]
-            )
+            conv_gate0 = tf.nn.conv1d(local_condition_batch,
+                                      weights_lc_gate,
+                                      stride=1,
+                                      padding="SAME",
+                                      name="lc_gate")
+
+            # conv_gate0 need to be reshaped cause Conv_filter is reduced in causalconv
+            conv_gate_slice = tf.shape(conv_gate0)[1] - tf.shape(conv_gate)[1]  # position to start
+            conv_gate0 = tf.slice(conv_gate0, [0, conv_gate_slice, 0], [-1, -1, -1])
+            conv_gate = conv_gate0 + conv_gate
 
         if self.use_biases:
             filter_bias = variables['filter_bias']
