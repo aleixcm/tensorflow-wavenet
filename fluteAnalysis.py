@@ -21,11 +21,6 @@ x5 = scipy.io.wavfile.read('corpus/Analysis/c1056.wav')[1]
 x6 = scipy.io.wavfile.read('corpus/Analysis/e1320.wav')[1]
 x7 = scipy.io.wavfile.read('corpus/Analysis/a1760.wav')[1]
 
-# Categories
-a = [0]
-b = [1]
-c = [2]
-
 def case(x):
     return {
         0: x1,
@@ -52,11 +47,11 @@ def genSignals(sequence, sampleSequence):
     y = y / y[np.argmax(y)]
     noise = 0.01*np.random.normal(0, 1, len(y))
     y = np.asarray(y) + noise
-    scipy.io.wavfile.write(os.path.join('corpus', 'Analysis', 'lc_train0_flute.wav' % c), fs, y)
+    scipy.io.wavfile.write(os.path.join('corpus', 'Analysis', '7freq_56000.wav'), fs, y)
 
 def main():
-    sequence = [0, 1, 2]
-    sampleSequence = [8000, 8000, 8000]
+    sequence = [0, 1, 2, 3, 4, 5, 6]
+    sampleSequence = [8000, 8000, 8000, 8000, 8000, 8000, 8000]
     genSignals(sequence, sampleSequence)
 
 if __name__ == '__main__':
