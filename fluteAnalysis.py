@@ -47,11 +47,11 @@ def genSignals(sequence, sampleSequence):
     y = y / y[np.argmax(y)]
     noise = 0.01*np.random.normal(0, 1, len(y))
     y = np.asarray(y) + noise
-    scipy.io.wavfile.write(os.path.join('corpus', 'Analysis', '7freq_56000.wav'), fs, y)
+    scipy.io.wavfile.write(os.path.join('corpus', 'Analysis', 'lc_gen4_flute.wav'), fs, y)
 
 def main():
-    sequence = [0, 1, 2, 3, 4, 5, 6]
-    sampleSequence = [8000, 8000, 8000, 8000, 8000, 8000, 8000]
+    sequence = [0, 3, 5]
+    sampleSequence = [24000, 24000, 24000]
     genSignals(sequence, sampleSequence)
 
 if __name__ == '__main__':
