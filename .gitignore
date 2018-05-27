@@ -6,4 +6,8 @@ corpus/.DS_Store
 corpus/localTrain/.DS_Store
 corpus/panFluteBigDataset/.DS_Store
 wavenet/.DS_Store
+generatedSignals/general/localTrainBigDataset2/.DS_Store
+generatedSignals/general/localTrainBigDatasetShapeAmp/.DS_Store
+generatedSignals/general/pianoBigDataset/.DS_Store
+generatedSignals/general/pianoPanFlute/.DS_Store
 
