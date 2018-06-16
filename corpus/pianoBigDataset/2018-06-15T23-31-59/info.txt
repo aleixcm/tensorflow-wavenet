@@ -5,3 +5,4 @@ Loss Value: 2.857325
 Training time: 8388.647282123566 sec
 Quantization channels: 256
 lc_channels: True
+pianoBigDataset

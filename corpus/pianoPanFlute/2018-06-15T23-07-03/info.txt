@@ -5,3 +5,4 @@ Loss Value: 2.8469985
 Training time: 8378.456830978394 sec
 Quantization channels: 256
 lc_channels: True
+pianoPanFlute

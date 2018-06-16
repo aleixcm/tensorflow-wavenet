@@ -5,3 +5,4 @@ Loss Value: 1.8079735
 Training time: 7973.6706211566925 sec
 Quantization channels: 256
 lc_channels: True
+panFluteBigDataset
