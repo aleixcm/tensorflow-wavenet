@@ -13,7 +13,7 @@ Frequencies will be octave [440, 880, 1320].
 
 fs = 16000
 
-x1 = scipy.io.wavfile.read('corpus/Analysis/a440.wav')[1]
+x1 = scipy.io.wavfile.read('corpus/Analysis/lc_train0.wav')[1]
 x2 = scipy.io.wavfile.read('corpus/Analysis/c531.wav')[1]
 x3 = scipy.io.wavfile.read('corpus/Analysis/e667.wav')[1]
 x4 = scipy.io.wavfile.read('corpus/Analysis/a880.wav')[1]

@@ -153,7 +153,7 @@ def get_category_cardinality(files):
 #Calculate MFCC. Called by get_labels
 def calculateMFCC(y,sr):
     mfccs = librosa.feature.mfcc(y, sr=sr)
-    mfccs = preprocessing.scale(mfccs, axis=1)
+    #mfccs = preprocessing.scale(mfccs, axis=1)
     return(mfccs)
 
 #Upsampling after MFCC. Called by get_labels
